@@ -273,7 +273,7 @@ var tokenize( std::string &source )
 typedef var (*func)(var&);
 typedef std::map<std::string, func> funcs;
 funcs functions;
-
+static var constants;
 
 class interpreter {
 public:
@@ -320,8 +320,14 @@ private:
                 find_function();
                 offset = temp_offset;
 
-                do_function( true );
-                val = return_val;
+                if( local_functions.isset( tokens[offset][1] ) && tokens[offset+1][0] == LEFT_PAREN ) {
+                    do_function( true );
+                    val = return_val;                     
+                } else {
+
+                    val = constants[ tokens[offset++][1] ];  
+                }                
+   
                 return true;
             }
         } else if( tokens[offset][0] == START_PHP ) {
@@ -981,6 +987,14 @@ var exten_implode( var &p )  {
     return out;
 }
 
+var exten_define( var &p )  {
+    if( ! constants.isset( p[0] ) ) {
+        constants[ p[0] ] = p[1];
+    }
+
+    return 0;
+}
+
 var exten_explode( var &p ) {
     var out;
     size_t pos = 0;
@@ -1051,6 +1065,7 @@ int main( int argc, char** argv ) {
 
     functions["implode"] = exten_implode;
     functions["explode"] = exten_explode;
+    functions["define"] = exten_define;
 
 
 	var p = tokenize( source );
