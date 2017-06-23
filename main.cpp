@@ -270,7 +270,7 @@ var tokenize( std::string &source )
 }
 
 //var variables;
-typedef var (*func)(var);
+typedef var (*func)(var&);
 typedef std::map<std::string, func> funcs;
 funcs functions;
 
@@ -876,7 +876,7 @@ private:
 
 
 
-var exten_sum( var p ) {
+var exten_sum( var &p ) {
     var out = 0;
     for( auto x : p ) {
         out += p[x];
@@ -885,13 +885,13 @@ var exten_sum( var p ) {
 }
 
 
-var exten_echo( var p ) {
+var exten_echo( var &p ) {
     echo( p[0] );
     
     return 0;
 }
 
-var exten_print_r( var p ) {
+var exten_print_r( var &p ) {
 
     if( p[1] == "true" ) {
         std::string out;
@@ -904,7 +904,7 @@ var exten_print_r( var p ) {
     return 0;
 }
 
-var exten_is_array( var p ) {
+var exten_is_array( var &p ) {
 
     if( p[0].type() == "array" )
        return true;
@@ -912,11 +912,11 @@ var exten_is_array( var p ) {
     return false;
 }
 
-var exten_type( var p ) {
+var exten_type( var &p ) {
     return p[0].type();
 }
 
-var exten_count( var p ) {
+var exten_count( var &p ) {
     if( p[0].type() == "array" ) {
         return p[0].count();
     }
@@ -924,7 +924,7 @@ var exten_count( var p ) {
     return 0;
 }
 
-var exten_microtime( var p ) {
+var exten_microtime( var &p ) {
     struct timeval time;
     gettimeofday(&time, NULL);
     double microsec = (float)time.tv_usec / (float)1000000 ;//time.tv_sec ;
@@ -933,7 +933,7 @@ var exten_microtime( var p ) {
 }
 
 
-var exten_usleep( var p ) {
+var exten_usleep( var &p ) {
     long t = p[0].to_num();
     std::cout.flush();
 
@@ -941,23 +941,23 @@ var exten_usleep( var p ) {
     return 0;
 }
 
-var exten_time( var p ) {
+var exten_time( var &p ) {
 
     return std::time(0);;
 }
 
-var exten_exit( var p )  {
+var exten_exit( var &p )  {
     exit(0);
     return 0;
 }
 
-var exten_die( var p )  {
+var exten_die( var &p )  {
     echo( p[0] );
     exit(0);
     return 0;
 }
 
-var exten_implode( var p )  {
+var exten_implode( var &p )  {
     var out = "";
     var pre = "";
     for( auto x : p[1] ) {
@@ -968,7 +968,7 @@ var exten_implode( var p )  {
     return out;
 }
 
-var exten_explode( var p ) {
+var exten_explode( var &p ) {
     var out;
     size_t pos = 0;
     size_t start = 0;
