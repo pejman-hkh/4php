@@ -1,10 +1,17 @@
 <?4php
 
+$ppp = 20;
+
 $ret = pejman( 'test', 'test1' );
 
-echo( 'ret is '. $ret."\n" );
 
 function pejman( $a, $b ) {
+	global $ppp;
+
+	global $sss;
+	
+	echo( 'global ppp is :'. $ppp."\n" );
+
 	echo('a is : '. $a."\n" );
 	echo('b is : '. $b."\n" );
 
