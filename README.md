@@ -50,6 +50,5 @@ g++ -std=c++11 main.cpp -o 4php
 
 
 # Update
-1- Constant added
-
-2- globalize in function added
+1. Constant added
+2. globalize in function added
