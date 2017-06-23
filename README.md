@@ -19,7 +19,7 @@ writing extension in c++ is very easy
 
 Example :
 ```cpp
-var exten_implode( var p )  {
+var exten_implode( var &p )  {
     var out = "";
     var pre = "";
     for( auto x : p[1] ) {
