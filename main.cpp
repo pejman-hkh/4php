@@ -607,26 +607,6 @@ private:
 
     }
 
-    /*var set_var( var &vars, var &index, var &out ) {
-
-        offset++;
-
-        var out = variables[ do_operator() ];
-
-        offset++;
-
-        if( tokens[offset][0] == EQUAL ) {
-            offset++;
-            out[index] = do_operator();
-        }
-
-        if( tokens[offset][0] == LEFT_BRACKET ) {
-            return do_variable( out );
-        }
- 
-        return out;
-    }*/
-
     var do_variable( var &vars ) {
 
         offset++;
