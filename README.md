@@ -2,11 +2,11 @@
 Simple php interpreter
 
 
-1.No syntax check
-2.No run time error
-3.Not support PHP OOP yet
-4.Not support switch statement
-5.Not support php casting
+1. No syntax check
+2. No run time error
+3. Not support PHP OOP yet
+4. Not support switch statement
+5. Not support php casting
 
 # About
 This simple php interpreter written in c++11 and can be used as template engine in c++ too.
