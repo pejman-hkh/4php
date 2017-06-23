@@ -26,3 +26,8 @@ var exten_implode( var p )  {
     return out;
 }
 ```
+And add it to functions :
+
+```cpp
+functions["implode"] = exten_implode;
+```
