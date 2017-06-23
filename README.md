@@ -40,3 +40,8 @@ functions["implode"] = exten_implode;
 ```code
 g++ -std=c++11 main.cpp -o 4php
 ```
+
+# Usage
+```code
+./4php test.php
+```
