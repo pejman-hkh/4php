@@ -435,6 +435,12 @@ private:
 
             do_for();
             return true;
+        } else if( tokens[offset][0] == GLOBAL ) {
+            offset++;
+
+            variables[ tokens[offset][1] ] = temp_variables[ tokens[offset][1] ];
+            offset++;
+            return true;
         }
 
         return false;
@@ -562,7 +568,7 @@ private:
 
         if( local ) {
  
-            var temp_variables = variables;
+            temp_variables = variables;
             variables.unset();
 
             var ff = local_functions[ func_name ];
@@ -573,6 +579,7 @@ private:
             for( auto x : params ) {
                 variables[ params[x] ] = out.isset( x ) ? out[x] : "";
             }
+
 
             start();
 
@@ -874,6 +881,7 @@ private:
     int offset = 0;
     var tokens;
     var variables;
+    var temp_variables;
     var return_val;
     var local_functions;
     //var whiles;
