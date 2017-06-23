@@ -11,6 +11,9 @@ Simple php interpreter
 # About
 This simple php interpreter written in c++11 and can be used as template engine in c++ too.
 
+# Porpus
+My porpus is converting php code too c++ and compile it at the end
+
 # Writing Extension
 writing extension in c++ is very easy
 
