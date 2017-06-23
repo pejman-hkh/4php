@@ -35,3 +35,8 @@ And add it to functions :
 ```cpp
 functions["implode"] = exten_implode;
 ```
+# building
+
+```code
+g++ -std=c++11 main.cpp -o 4php
+```
