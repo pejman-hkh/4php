@@ -332,8 +332,8 @@ private:
 
             if( tokens[offset][0] == EQUAL ) {
                 offset++;
-
-                echo( do_operator() );
+                val = do_operator();
+                echo( val );
             }
 
             start();  
@@ -367,7 +367,6 @@ private:
 
             if( tokens[offset][0] == LEFT_BRACKET ) {
 
-                int temp_offset = offset;
                 val = do_variable( variables[ var_name ] );
 
                 return true;
@@ -618,6 +617,12 @@ private:
 
         if( tokens[offset][0] == EQUAL ) {
             offset++;
+
+            if( index == "" ) {
+                index = vars.count();
+            }
+
+
             vars[index] = do_operator();
         }
 
