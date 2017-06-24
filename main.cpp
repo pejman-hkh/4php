@@ -36,7 +36,7 @@ std::string file_get_contents( std::string file_name ) {
 }
 
 
-var tokenize( std::string &source )
+var tokenize( std::string &source, bool eval = false )
 {
 
     var tokens;
@@ -54,11 +54,16 @@ var tokenize( std::string &source )
             if( i+1 != end && source[i+1] == '?' ) {
 
                 if( strings != "" ) {
-                    tokens[it++] = {IDENTIFIER, "echo"};
-                    tokens[it++] = {LEFT_PAREN};
-                    tokens[it++] = {STRING, strings};
-                    tokens[it++] = {RIGHT_PAREN};
-                    tokens[it++] = {SEMICOLON};
+                    if( strings == "?>" && eval ) {
+                        tokens[it++] = {END_PHP};
+                    } else {
+                        tokens[it++] = {IDENTIFIER, "echo"};
+                        tokens[it++] = {LEFT_PAREN};
+                        tokens[it++] = {STRING, strings};
+                        tokens[it++] = {RIGHT_PAREN};
+                        tokens[it++] = {SEMICOLON};                        
+                    }
+
                 }
 
 
@@ -214,7 +219,7 @@ var tokenize( std::string &source )
 
                 while(!(source[i] == '"' && source[i-1] != '\\')) passes += source[i++];
                 ++i;
-	            tokens[it++] = {STRING, var(passes).replace( var( { { "\\n", "\n" }, { "\\r", "\r"}, { "\\t", "\t" }  } ).to_kv() ) };
+	            tokens[it++] = {STRING, var(passes).replace( var( { { "\\n", "\n" }, { "\\\"", "\"" }, { "\\r", "\r"}, { "\\t", "\t" }  } ).to_kv() ) };
 
                 break;            
             case '\'':
@@ -325,7 +330,11 @@ private:
 
         if( tokens[offset][0] == IDENTIFIER ) {
             
-            if( tokens[offset][1] == "include") {
+            if( tokens[offset][1] == "eval") {
+                offset++;
+                val = do_eval();
+                return true;
+            } else if( tokens[offset][1] == "include") {
                 offset++;
                 val = do_include();
                 return true;
@@ -472,6 +481,43 @@ private:
         }
 
         return false;
+    }
+
+    var do_eval() {
+        int start_offset = offset;
+        int i = offset - 1;
+
+        offset++;
+
+        std::string source = do_operator().string() ;  
+        offset++;
+        offset++;
+
+        if( source != "" ) {
+
+            var new_toks = tokenize( source, true );
+            
+       
+            var cache_tokens;
+            
+            int j = offset;
+            for( auto x : new_toks ) {
+                if( tokens[ j ].count() > 0 )
+                    cache_tokens[x] = tokens[ j ];
+                j++;
+                
+                tokens[i++] = new_toks[x];
+            }
+
+            for( auto x1 : cache_tokens ) {
+                tokens[i++] = cache_tokens[x1];
+            }
+
+        }
+        offset = start_offset;
+
+        start();
+        return 0;  
     }
 
     var do_include(){
