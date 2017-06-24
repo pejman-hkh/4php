@@ -8,7 +8,6 @@ Simple php interpreter
 4. Not support switch statement
 5. Not support php casting
 6. Not support do while
-7. Not support include
 
 # About
 This simple php interpreter written in c++11 and can be used as template engine in c++ too.
