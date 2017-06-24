@@ -33,7 +33,7 @@ public:
 			data.clear();
 		} else {
 			for( int i = 0; i < keys.size(); i++ ) {
-				if( keys[i] == index.container ) {
+				if( keys[i].container == index.container ) {
 					keys.erase( keys.begin() + i );
 					data.erase( data.begin() + i );
 				}
