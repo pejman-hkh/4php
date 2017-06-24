@@ -331,12 +331,10 @@ private:
         if( tokens[offset][0] == IDENTIFIER ) {
             
             if( tokens[offset][1] == "eval") {
-                offset++;
                 val = do_eval();
                 return true;
             } else if( tokens[offset][1] == "include") {
-                offset++;
-                val = do_include();
+                val = do_eval();
                 return true;
             } else if( functions[ tokens[offset][1].string() ] ) {
                 val = do_function();
@@ -484,79 +482,78 @@ private:
     }
 
     var do_eval() {
+        //int i = offset;
         int start_offset = offset;
-        int i = offset - 1;
+        var kind = tokens[offset][1];
 
-        offset++;
-
-        std::string source = do_operator().string() ;  
         offset++;
         offset++;
 
+        std::string source;
+        if( kind == "eval" ) {
+            source = do_operator().string() ;  
+        } else {
+            source = file_get_contents( tokens[offset][1].string() ) ;
+            offset++;
+        }
+        
+        offset++;
+        offset++;
+
+        
         if( source != "" ) {
 
             var new_toks = tokenize( source, true );
             
-       
-            var cache_tokens;
-            
-            int j = offset;
-            for( auto x : new_toks ) {
-                if( tokens[ j ].count() > 0 )
-                    cache_tokens[x] = tokens[ j ];
-                j++;
+            //for include remove start & end php tag
+            if( kind != "eval" ) {
+                 if( new_toks[0][0] == START_PHP ) {
+                    new_toks.unset(0);
+                    if( new_toks[1][0] == IDENTIFIER && new_toks[1][1].in_array({"php", "4php"}) ) {
+                        new_toks.unset(1);
+                    }
+
+                }
                 
-                tokens[i++] = new_toks[x];
+                var end_index = *(new_toks.end());
+                if( new_toks[ end_index ][0] == END_PHP ) {
+                    new_toks.unset( end_index );
+                }
             }
 
-            for( auto x1 : cache_tokens ) {
-                tokens[i++] = cache_tokens[x1];
+           
+            
+            var new_tokens;
+            int i = 0;
+            int index = 0;
+            for( auto x : tokens ) {
+                if( ! tokens.isset( i ) ) break;
+
+                
+                new_tokens[ index++ ] = tokens[i++];
+           
+
+                if( i == start_offset ) {
+                    for( auto x1 : new_toks ) {
+                        new_tokens[ index++ ] = new_toks[x1];
+                    }
+
+                    while( i < offset ) {
+                        i++;
+                    }
+
+                }
             }
 
+            tokens = new_tokens;
+            new_tokens.unset();
         }
+
         offset = start_offset;
 
         start();
         return 0;  
     }
-
-    var do_include(){
-        offset++;
-
-        std::string source = file_get_contents( tokens[offset][1].string() ) ;  
-        offset++;
-        offset++;
-
-        if( source != "" ) {
-
-            var new_toks = tokenize( source );
-                
-            var cache_tokens;
-            int i = offset;
-            int j = 0;
-
-            cache_tokens[j] = tokens[ i ];
-            tokens[i++] = {END_PHP};
-
-            for( auto x : new_toks ) {
-                if (tokens[ i ].count() > 0 )
-                    cache_tokens[j] = tokens[ i ];
-                
-                
-                tokens[i++] = new_toks[j++];
-            }
-
-            cache_tokens[j] = tokens[ i ];
-            tokens[i++] = {START_PHP};
-
-            for( auto x1 : cache_tokens ) {
-                tokens[i++] = cache_tokens[x1];
-            }
-
-        } 
-        return 0;      
-    }
-
 
     var do_operator() {
         var ret = do_second_operator();
