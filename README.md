@@ -52,3 +52,4 @@ g++ -std=c++11 main.cpp -o 4php
 1. Constant added
 2. Globalize in function added
 3. Include support added
+4. Eval support added
