@@ -18,6 +18,24 @@ var keywords = var({
 }).to_kv();
 
 
+std::string file_get_contents( std::string file_name ) {
+    std::string content;
+    std::string line;
+    std::ifstream myfile ( file_name );
+    if ( myfile.is_open() )
+    {
+        while ( std::getline (myfile,line) )
+        {
+          content += line+"\n";
+        }
+        return std::move( content );
+        myfile.close();
+    }
+
+    return "";
+}
+
+
 var tokenize( std::string &source )
 {
 
@@ -274,11 +292,12 @@ typedef var (*func)(var&);
 typedef std::map<std::string, func> funcs;
 funcs functions;
 static var constants;
+static var tokens;
 
 class interpreter {
 public:
 
-    interpreter( const var &tokens ) : tokens( tokens ) {
+    interpreter( var &tokens ) : tokens( tokens ) {
 
     }
 
@@ -306,8 +325,11 @@ private:
 
         if( tokens[offset][0] == IDENTIFIER ) {
             
-
-            if( functions[ tokens[offset][1].string() ] ) {
+            if( tokens[offset][1] == "include") {
+                offset++;
+                val = do_include();
+                return true;
+            } else if( functions[ tokens[offset][1].string() ] ) {
                 val = do_function();
                 return true;
             } else if( local_functions.isset( tokens[offset][1] ) ) {
@@ -451,6 +473,44 @@ private:
 
         return false;
     }
+
+    var do_include(){
+        offset++;
+
+        std::string source = file_get_contents( tokens[offset][1].string() ) ;  
+        offset++;
+        offset++;
+
+        if( source != "" ) {
+
+            var new_toks = tokenize( source );
+                
+            var cache_tokens;
+            int i = offset;
+            int j = 0;
+
+            cache_tokens[j] = tokens[ i ];
+            tokens[i++] = {END_PHP};
+
+            for( auto x : new_toks ) {
+                if (tokens[ i ].count() > 0 )
+                    cache_tokens[j] = tokens[ i ];
+                
+                
+                tokens[i++] = new_toks[j++];
+            }
+
+            cache_tokens[j] = tokens[ i ];
+            tokens[i++] = {START_PHP};
+
+            for( auto x1 : cache_tokens ) {
+                tokens[i++] = cache_tokens[x1];
+            }
+
+        } 
+        return 0;      
+    }
+
 
     var do_operator() {
         var ret = do_second_operator();
@@ -995,6 +1055,7 @@ var exten_define( var &p )  {
     return 0;
 }
 
+
 var exten_explode( var &p ) {
     var out;
     size_t pos = 0;
@@ -1018,22 +1079,6 @@ var exten_explode( var &p ) {
 
 }
 
-std::string file_get_contents( std::string file_name ) {
-    std::string content;
-    std::string line;
-    std::ifstream myfile ( file_name );
-    if ( myfile.is_open() )
-    {
-        while ( std::getline (myfile,line) )
-        {
-          content += line+"\n";
-        }
-        return std::move( content );
-        myfile.close();
-    }
-
-    return "";
-}
 
 
 int main( int argc, char** argv ) {
@@ -1068,10 +1113,10 @@ int main( int argc, char** argv ) {
     functions["define"] = exten_define;
 
 
-	var p = tokenize( source );
+	tokens = tokenize( source );
 
 
-    interpreter i( p );
+    interpreter i( tokens );
     i.start();
 
 }
