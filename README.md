@@ -47,6 +47,31 @@ g++ -std=c++11 main.cpp -o 4php
 ./4php test.php
 ```
 
+# Web programming
+You can use 4php in cgi with shebang
+Request function make web request array & you can set superglobal functions with $SUPERGLOBALS variable and use it in function scope too.
+
+```php
+#!4php
+<?
+echo("Content-type: text/html\r\n\r\n");
+
+$request = request();
+
+//define super global function in 4php
+$SUPERGLOBALS['_GET'] = $request['get'];
+$SUPERGLOBALS['_POST'] = $request['post'];
+$SUPERGLOBALS['_SERVER'] = $request['server'];
+print_r( $_SERVER );
+
+function test() {
+	print_r( $_SERVER );
+}
+
+test();
+?>
+```
+
 
 # Update
 1. Constant added
