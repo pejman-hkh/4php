@@ -561,48 +561,31 @@ private:
         return 0;  
     }
 
-    var do_operator() {
-        var ret = do_second_operator();
-        
-        if( tokens[ offset ][0] == DOT ) {
-            offset++;
-            ret = ret.concat( do_operator() );
-        } else if( tokens[offset][0] == EQ_OP ) {
-            offset++;
-            ret = ret == do_operator();
-        } else if( tokens[offset][0] == LESS_EQUAL ) {
-            offset++;
-            ret = ret <= do_operator();
-        } else if( tokens[offset][0] == LESS ) {
-            offset++;
-            ret = ret < do_operator();
-        } else if( tokens[offset][0] == GREATER ) {
-            offset++;
-            ret = ret > do_operator();
-        } else if( tokens[offset][0] == GREATER_EQUAL ) {
-            offset++;
-            ret = ret >= do_operator();
-        }
-
-        return ret;
-    }
-
     var do_first_operator() {
-        var ret;
         
+        var ret;
         if( ! get_val( ret ) ) {
             return ret;
         }
-
-        if( tokens[offset][0] == STAR ) {
+        
+        if( tokens[ offset ][0] == DOT ) {
             offset++;
-            ret *= do_first_operator();
-        } else if( tokens[offset][0] == SLASH ) {
+            ret = ret.concat( do_first_operator() );
+        } else if( tokens[offset][0] == EQ_OP ) {
             offset++;
-            ret /= do_first_operator();
-        } else if( tokens[offset][0] == LOGICAL_AND ) {
+            ret = ret == do_first_operator();
+        } else if( tokens[offset][0] == LESS_EQUAL ) {
             offset++;
-            ret = ret && do_first_operator();
+            ret = ret <= do_first_operator();
+        } else if( tokens[offset][0] == LESS ) {
+            offset++;
+            ret = ret < do_first_operator();
+        } else if( tokens[offset][0] == GREATER ) {
+            offset++;
+            ret = ret > do_first_operator();
+        } else if( tokens[offset][0] == GREATER_EQUAL ) {
+            offset++;
+            ret = ret >= do_first_operator();
         }
 
         return ret;
@@ -612,16 +595,33 @@ private:
 
         var ret = do_first_operator();
 
+        if( tokens[offset][0] == STAR ) {
+            offset++;
+            ret *= do_second_operator();
+        } else if( tokens[offset][0] == SLASH ) {
+            offset++;
+            ret /= do_second_operator();
+        } else if( tokens[offset][0] == LOGICAL_AND ) {
+            offset++;
+            ret = ret && do_second_operator();
+        }
+
+        return ret;
+    }
+
+    var do_operator() {
+
+        var ret = do_second_operator();
 
         if( tokens[ offset ][0] == PLUS ) {
             offset++;
-            ret += do_second_operator();
+            ret += do_operator();
         } else if( tokens[ offset ][0] == DASH  ) {
             offset++;
-            ret -= do_second_operator();
+            ret -= do_operator();
         } else if( tokens[ offset ][0] == LOGICAL_OR ) {
             offset++;
-            ret = ret || do_second_operator();
+            ret = ret || do_operator();
         }
 
         return ret;
@@ -858,7 +858,7 @@ private:
 
         offset++;
 
-        if( ( statement > 0 && statement != "" && statement != 0 ) || ( statement.count() > 0 ) ) {
+        if( ( statement > 0 ) || ( statement.count() > 0 ) ) {
             offset++;
             start();
             offset++;
