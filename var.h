@@ -294,10 +294,10 @@ public:
         
     }
 
-	explicit operator bool() const 
+	explicit operator bool() 
 	{
 
-		if( container != "0" ) {
+		if( ( container != "0" && container != "" ) || ( this->count() > 0 ) ) {
 			return true;
 		}
 

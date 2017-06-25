@@ -858,7 +858,7 @@ private:
 
         offset++;
 
-        if( ( statement > 0 ) || ( statement.count() > 0 ) ) {
+        if( statement ) {
             offset++;
             start();
             offset++;
