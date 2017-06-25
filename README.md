@@ -53,3 +53,6 @@ g++ -std=c++11 main.cpp -o 4php
 2. Globalize in function added
 3. Include support added
 4. Eval support added
+5. Define superglobal variable
+6. Web programming added ( cgi with shebang )
+7. Not showing shebang added
