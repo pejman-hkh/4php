@@ -46,6 +46,11 @@ g++ -std=c++11 main.cpp -o 4php
 ```code
 ./4php test.php
 ```
+# load C++ library
+You can load every c++ library in 4php and use it in web cgi
+
+see : /tests/web
+
 
 # Web programming
 You can use 4php in cgi with shebang
