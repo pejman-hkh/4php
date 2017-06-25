@@ -62,6 +62,26 @@ public:
 		return *this;
 	}
 
+    var explode( std::string delim ) {
+	    var out;
+		size_t pos = 0;
+		size_t start = 0;
+		int i = 0;
+		while ( ( pos = container.find( delim, pos ) ) != std::string::npos ) {
+
+			out[ i++ ] = container.substr( start, ( pos - start ) );
+
+			pos += delim.length();
+
+			start = pos;
+
+		}	
+	
+		out[ i ] = container.substr( start, container.length() );
+		return std::move( out );
+
+    }
+    
 	bool isset( var index ) {
 		for( int i = 0; i < keys.size(); i++ ) {
 			if( keys[i].container == index.container ) {
