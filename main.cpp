@@ -1,4 +1,5 @@
 #include "var.h"
+#include "request.h"
 
 
 enum TokenType {
@@ -7,7 +8,7 @@ enum TokenType {
     SLASH, PLUS_EQUAL, DASH_EQUAL, STAR_EQUAL, PERCENT_EQUAL,
     SLASH_EQUAL,NOT, COMMA, SEMICOLON, DOT, COLON, EQUAL, EQ_OP,
     NOT_EQUAL, GREATER, GREATER_EQUAL, LESS, LESS_EQUAL, LOGICAL_AND,
-    LOGICAL_OR, IF, ELSE, WHILE, FOR, RETURN, BREAK, CONTINUE, FUNCTION, GLOBAL, LOCAL, EQ_ARR, TRUE, FALSE, ARRAY, VARIABLE, AS, FOREACH, START, PLUS_PLUS, START_PHP, END_PHP, QUESTION, ELSEIF
+    LOGICAL_OR, IF, ELSE, WHILE, FOR, RETURN, BREAK, CONTINUE, FUNCTION, GLOBAL, LOCAL, EQ_ARR, TRUE, FALSE, ARRAY, VARIABLE, AS, FOREACH, START, PLUS_PLUS, START_PHP, END_PHP, QUESTION, ELSEIF, SHEBANG
 };
 
 
@@ -35,6 +36,7 @@ std::string file_get_contents( std::string file_name ) {
     return "";
 }
 
+static bool shebang_seted = false;
 
 var tokenize( std::string &source, bool eval = false )
 {
@@ -54,7 +56,10 @@ var tokenize( std::string &source, bool eval = false )
             if( i+1 != end && source[i+1] == '?' ) {
 
                 if( strings != "" ) {
-                    if( strings == "?>" && eval ) {
+                    if( strings.substr(0, 2) == "#!" && ! shebang_seted ) {
+                        tokens[it++] = {SHEBANG, strings};
+                        shebang_seted = true;
+                    } else if( strings == "?>" && eval ) {
                         tokens[it++] = {END_PHP};
                     } else {
                         tokens[it++] = {IDENTIFIER, "echo"};
@@ -329,7 +334,6 @@ private:
 
 
         if( tokens[offset][0] == IDENTIFIER ) {
-            
             if( tokens[offset][1] == "eval") {
                 val = do_eval();
                 return true;
@@ -359,6 +363,10 @@ private:
    
                 return true;
             }
+        } else if( tokens[offset][0] == SHEBANG ) {
+                offset++;
+                start();
+                return true; 
         } else if( tokens[offset][0] == START_PHP ) {
             offset++;
             if( tokens[offset][0] == IDENTIFIER && tokens[offset][1].in_array({ "php", "4php" } ) ) {
@@ -390,9 +398,7 @@ private:
 
             if( tokens[ offset ][0] == EQUAL ) {
                 offset++;
-
                 variables[ var_name ] = do_operator();
-
             }
 
             if( tokens[offset][0] == PLUS_PLUS ) {
@@ -402,7 +408,7 @@ private:
 
             if( tokens[offset][0] == LEFT_BRACKET ) {
 
-                val = do_variable( variables[ var_name ] );
+                val = do_variable( variables[ var_name ], var_name );
 
                 return true;
             }
@@ -482,7 +488,7 @@ private:
     }
 
     var do_eval() {
-        //int i = offset;
+
         int start_offset = offset;
         var kind = tokens[offset][1];
 
@@ -680,6 +686,7 @@ private:
             temp_variables = variables;
             variables.unset();
 
+
             var ff = local_functions[ func_name ];
 
             int temp_offset = offset;
@@ -689,6 +696,10 @@ private:
                 variables[ params[x] ] = out.isset( x ) ? out[x] : "";
             }
 
+            //define super global variable in functions
+            for( auto s : super_global_variables ) {
+                variables[ s ] = super_global_variables[s];
+            }
 
             start();
 
@@ -722,7 +733,7 @@ private:
 
     }
 
-    var do_variable( var &vars ) {
+    var do_variable( var &vars, var &var_name ) {
 
         offset++;
 
@@ -738,13 +749,19 @@ private:
                 index = vars.count();
             }
 
+            var var_val = do_operator();
+            vars[index] = var_val;
+            
 
-            vars[index] = do_operator();
+            if( var_name == "SUPERGLOBALS" ) {
+                super_global_variables[ index ] = var_val;
+                variables[ index ] = var_val;
+            }          
         }
 
 
         if( tokens[offset][0] == LEFT_BRACKET ) {
-            return do_variable( out );
+            return do_variable( out, var_name );
         }
  
         return out;
@@ -993,7 +1010,7 @@ private:
     var temp_variables;
     var return_val;
     var local_functions;
-    //var whiles;
+    var super_global_variables;
 };
 
 
@@ -1099,6 +1116,32 @@ var exten_define( var &p )  {
 }
 
 
+var exten_get_defined_functions( var &p )  {
+    var internal;
+    int i = 0;
+    for( auto x : functions ) {
+        internal[ i++ ] = x.first;
+
+    }
+
+    var out;
+    out["internal"] = internal; 
+
+    return out;
+}
+
+var exten_request( var &p )  {
+    request req;
+
+    var out;
+    out["post"] = req.post();
+    out["get"] = req.get();
+    out["server"] = req.server();
+
+    return out;
+}
+
+
 var exten_explode( var &p ) {
     var out;
     size_t pos = 0;
@@ -1154,10 +1197,13 @@ int main( int argc, char** argv ) {
     functions["implode"] = exten_implode;
     functions["explode"] = exten_explode;
     functions["define"] = exten_define;
+    functions["request"] = exten_request;
+
+
+    functions["get_defined_functions"] = exten_get_defined_functions;
 
 
 	tokens = tokenize( source );
-
 
     interpreter i( tokens );
     i.start();
