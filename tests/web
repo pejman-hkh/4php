@@ -1,24 +1,25 @@
 #!4php
-<?
+<?4php
 echo("Content-type: text/html\r\n\r\n");
 
 $request = request();
 
-//define super global function in 4php
-$SUPERGLOBALS['_GET'] = $request['get'];
-$SUPERGLOBALS['_POST'] = $request['post'];
-$SUPERGLOBALS['_SERVER'] = $request['server'];
-
+$_GET = $request['get'];
+$_POST = $request['post'];
+$_SERVER = $request['server'];
 
 print_r( $_SERVER );
-
-
-
-function test() {
-	print_r( $_SERVER );
-}
-
-
-test();
-
+print_r( $_GET );
 ?>
+<br /><br />
+<?4php
+if( count( $_POST ) > 0 ) {
+	echo("Post request : <br />");
+	print_r( $_POST );
+}
+?>
+
+<form method="post">
+<input name="name" />
+<input type="submit" value="submit" />
+</form>
