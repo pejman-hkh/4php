@@ -49,6 +49,7 @@ g++ -std=c++11 main.cpp -o 4php
 
 # Web programming
 You can use 4php in cgi with shebang
+
 Request function make web request array & you can set superglobal functions with $SUPERGLOBALS variable and use it in function scope too.
 
 ```php
