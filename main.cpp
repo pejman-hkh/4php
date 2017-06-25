@@ -1,5 +1,6 @@
 #include "var.h"
 #include "request.h"
+#include "base64.h"
 
 
 enum TokenType {
@@ -1130,6 +1131,20 @@ var exten_get_defined_functions( var &p )  {
     return out;
 }
 
+
+var exten_base64_encode( var &p )  {
+
+    std::string str = p[0].string();
+    return php_base64_encode( str, str.length() );
+}
+
+
+var exten_base64_decode( var &p )  {
+    std::string str = p[0].string();
+    return php_base64_decode( str, str.length() );
+}
+
+
 var exten_request( var &p )  {
     request req;
 
@@ -1181,6 +1196,7 @@ int main( int argc, char** argv ) {
         exit(0);
     }
 
+
     functions["sum"] = exten_sum;
     functions["echo"] = exten_echo;
 	functions["print"] = exten_echo;
@@ -1201,6 +1217,10 @@ int main( int argc, char** argv ) {
 
 
     functions["get_defined_functions"] = exten_get_defined_functions;
+
+
+    functions["base64_encode"] = exten_base64_encode;
+    functions["base64_decode"] = exten_base64_decode;
 
 
 	tokens = tokenize( source );
