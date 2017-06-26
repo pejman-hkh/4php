@@ -87,3 +87,4 @@ test();
 5. Define superglobal variable
 6. Web programming added ( cgi with shebang )
 7. Not showing shebang added
+8. Update variable set and add .= and += & ... operator
