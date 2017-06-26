@@ -16,7 +16,7 @@ enum TokenType {
 var keywords = var({
     {"if", IF}, {"else", ELSE}, {"elseif", ELSEIF}, {"while", WHILE}, {"for", FOR},
     {"return", RETURN}, {"break", BREAK}, {"continue", CONTINUE},
-    {"function", FUNCTION}, {"global", GLOBAL}, { "true", TRUE }, { "true", FALSE }, { "array", ARRAY }, { "as", AS }, { "foreach", FOREACH }
+    {"function", FUNCTION}, {"global", GLOBAL}, { "true", TRUE }, { "false", FALSE }, { "array", ARRAY }, { "as", AS }, { "foreach", FOREACH }
 }).to_kv();
 
 
@@ -386,8 +386,16 @@ private:
             offset++;
             start();            
         } else if( tokens[offset][0].in_array( { STRING, NUMBER, TRUE, FALSE } ) ) {
-
-            val = tokens[offset++][1];
+            if( tokens[offset][0] == TRUE ) {
+                val = true;
+                offset++;
+            } else if( tokens[offset][0] == FALSE ) {
+                val = false;
+                offset++;  
+            } else {
+                val = tokens[offset++][1]; 
+            }
+            
             return true;
         } else if( tokens[ offset ][0] == LEFT_BRACKET ) {
             val = do_array();
