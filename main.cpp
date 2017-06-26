@@ -125,41 +125,41 @@ var tokenize( std::string &source, bool eval = false )
             case ':':
                 tokens[it++] = {COLON}; ++i; break;
             case '+':
-                if(i+1 != end && source[i+1] == '='){
+                /*if(i+1 != end && source[i+1] == '='){
                     tokens[it++] = {PLUS_EQUAL}; i+=2;
-                } else if(i+1 != end && source[i+1] == '+'){ 
+                } else*/ if(i+1 != end && source[i+1] == '+'){ 
                 	tokens[it++] = {PLUS_PLUS}; i+=2;
                 } else {
                     tokens[it++] = {PLUS}; ++i;
                 }
                 break;
             case '-':
-                if(i+1 != end && source[i+1] == '='){
+                /*if(i+1 != end && source[i+1] == '='){
                     tokens[it++] = {DASH_EQUAL}; i+=2;
-                } else {
+                } else {*/
                     tokens[it++] = {DASH}; ++i;
-                }
+                //}
                 break;
             case '*':
-                if(i+1 != end && source[i+1] == '='){
+                /*if(i+1 != end && source[i+1] == '='){
                     tokens[it++] = {STAR_EQUAL}; i+=2;
-                } else {
+                } else {*/
                     tokens[it++] = {STAR}; ++i;
-                }
+                //}
                 break;
             case '%':
-                if(i+1 != end && source[i+1] == '='){
+                /*if(i+1 != end && source[i+1] == '='){
                     tokens[it++] = {PERCENT_EQUAL}; i+=2;
-                } else {
+                } else {*/
                     tokens[it++] = {PERCENT}; ++i;
-                }
+                //}
                 break;
             case '/':
                 if(i+1 != end && source[i+1] == '/') {
                     ++i; while(source[i] != '\n') ++i; ++i;
-                } else if(i+1 != end && source[i+1] == '='){
+                } /*else if(i+1 != end && source[i+1] == '='){
                     tokens[it++] = {SLASH_EQUAL}; i+=2;
-                } else {
+                }*/ else {
                     tokens[it++] = {SLASH}; ++i;
                 }
                 break;
@@ -396,26 +396,10 @@ private:
 
             var var_name = tokens[ offset++ ][1];
 
-
-            if( tokens[ offset ][0] == EQUAL ) {
-                offset++;
-                variables[ var_name ] = do_operator();
-            }
-
-            if( tokens[offset][0] == PLUS_PLUS ) {
-                offset++;
-                variables[ var_name ] += 1;
-            }
-
-            if( tokens[offset][0] == LEFT_BRACKET ) {
-
-                val = do_variable( variables[ var_name ], var_name );
-
-                return true;
-            }
-
+            do_variable( variables[ var_name ], var_name );
 
             val = variables[ var_name ];
+
             return true;
         } else if( tokens[offset][0] == LEFT_PAREN ) {
             offset++;
@@ -487,6 +471,98 @@ private:
 
         return false;
     }
+
+
+    void do_variable( var &vars, var &var_name ) {
+
+        var var_val;
+
+        var index;
+        bool index_t = false;
+        if( tokens[offset][0] == LEFT_BRACKET ) {
+
+            offset++;
+
+            index = do_operator();
+
+            offset++;
+            index_t = true;
+        }    
+
+        if( tokens[ offset ][0].in_array({ STAR, PLUS, DOT, SLASH, DASH }) ) {
+            int operator_k = tokens[ offset ][0].to_int();
+            offset++;
+
+            if( tokens[ offset ][0] == EQUAL ) {
+                offset++;
+                var_val = do_operator();
+                
+
+                switch( operator_k ) {
+                    case STAR :
+                        if( index_t )
+                            vars[index] *= var_val;
+                        else
+                            vars *= var_val; 
+                        break;
+                    case DOT :
+                        if( index_t )
+                            vars[index] += var_val;
+                        else
+                            vars += var_val; 
+                        break;
+                    case PLUS :
+                        if( index_t )
+                            vars[index] += var_val;
+                        else
+                            vars += var_val; 
+                        break;
+                    case SLASH :
+                        if( index_t )
+                            vars[index] /= var_val;
+                        else
+                            vars /= var_val; 
+                        break; 
+                    case DASH :
+                        if( index_t )
+                            vars[index] -= var_val;
+                        else
+                            vars -= var_val; 
+                        break;  
+                }
+
+            }
+        }
+
+        if( tokens[offset][0] == EQUAL ) {
+            offset++;
+
+            var_val = do_operator();
+
+            if( index_t )
+                vars[index] = var_val;
+            else
+                vars = var_val;
+
+            if( var_name == "SUPERGLOBALS" && index_t ) {
+                super_global_variables[ index ] = var_val;
+                variables[ index ] = var_val;
+            }   
+
+        }
+
+        
+        if( tokens[offset][0] == LEFT_BRACKET ) {
+            var empty;
+            var &out = vars.isset(index) ? vars[ index ] : empty ;
+
+            do_variable( out, var_name );
+        } 
+
+
+        
+    }
+
 
     var do_eval() {
 
@@ -569,10 +645,7 @@ private:
             return ret;
         }
         
-        if( tokens[ offset ][0] == DOT ) {
-            offset++;
-            ret = ret.concat( do_first_operator() );
-        } else if( tokens[offset][0] == EQ_OP ) {
+        if( tokens[offset][0] == EQ_OP ) {
             offset++;
             ret = ret == do_first_operator();
         } else if( tokens[offset][0] == LESS_EQUAL ) {
@@ -614,7 +687,10 @@ private:
 
         var ret = do_second_operator();
 
-        if( tokens[ offset ][0] == PLUS ) {
+        if( tokens[ offset ][0] == DOT ) {
+            offset++;
+            ret = ret.concat( do_first_operator() );
+        } else if( tokens[ offset ][0] == PLUS ) {
             offset++;
             ret += do_operator();
         } else if( tokens[ offset ][0] == DASH  ) {
@@ -624,6 +700,7 @@ private:
             offset++;
             ret = ret || do_operator();
         }
+
 
         return ret;
     }
@@ -734,42 +811,6 @@ private:
         }
 
     }
-
-    var do_variable( var &vars, var &var_name ) {
-
-        offset++;
-
-        var index = do_operator();
-        var empty;
-        var &out = vars.isset(index) ? vars[ index ] : empty ;
-        offset++;
-
-        if( tokens[offset][0] == EQUAL ) {
-            offset++;
-
-            if( index == "" ) {
-                index = vars.count();
-            }
-
-            var var_val = do_operator();
-            vars[index] = var_val;
-            
-
-            if( var_name == "SUPERGLOBALS" ) {
-                super_global_variables[ index ] = var_val;
-                variables[ index ] = var_val;
-            }          
-        }
-
-
-        if( tokens[offset][0] == LEFT_BRACKET ) {
-            return do_variable( out, var_name );
-        }
- 
-        return out;
-    }
-
-
 
     var do_paren() {
         var out = do_operator();
