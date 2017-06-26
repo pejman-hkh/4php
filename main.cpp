@@ -489,6 +489,15 @@ private:
             index_t = true;
         }    
 
+        if( tokens[offset][0] == PLUS_PLUS ) {
+            offset++;
+            if( index_t )
+                vars[index] += 1;
+            else
+                vars += 1;
+        }
+
+
         if( tokens[ offset ][0].in_array({ STAR, PLUS, DOT, SLASH, DASH }) ) {
             int operator_k = tokens[ offset ][0].to_int();
             offset++;
