@@ -878,10 +878,8 @@ private:
         offset++;
 
         int start_offset_end = offset;
-        while( true ) {
-            if( tokens[offset++][0] == RIGHT_PAREN )
-                break;
-        }
+ 
+        find_end_paren();
 
         offset++;
         int st_while_offset = offset;
