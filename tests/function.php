@@ -28,5 +28,12 @@ function pejman( $a, $b ) {
 }
 
 
-echo("after function\n")
+echo("after function\n");
+
+
+ppp( 'sss' );
+
+function ppp( $a = 10, $b = "ttttt" ) {
+	echo( $a."###".$b );
+}
 ?>
