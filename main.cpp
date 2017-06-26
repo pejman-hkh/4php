@@ -693,8 +693,9 @@ private:
             int temp_offset = offset;
             offset = ff[0].to_int()+1;
             var &params = ff[2];
+            var &params_val = ff[3];
             for( auto x : params ) {
-                variables[ params[x] ] = out.isset( x ) ? out[x] : "";
+                variables[ params[x] ] = out.isset( x ) ? out[x] : ( params_val.isset( x ) ? params_val[x] : "" );
             }
 
             //define super global variable in functions
@@ -923,6 +924,7 @@ private:
         } else {
             offset++;
             var params;
+            var params_val;
             int i = 0;
             while( true ) {
 
@@ -932,13 +934,18 @@ private:
                 }
 
                 params[ i++ ] = tokens[offset++][1];
+                
+                if( tokens[offset][0] == EQUAL ) {
+                    offset++;
+                    params_val[ i - 1 ] = do_operator();
+
+                }
 
                 if( tokens[offset][0] == COMMA ) {
                     offset++;
                     continue;
                 }
             }
-
 
             var st = offset++;
             var end = find_end_block();
@@ -947,6 +954,7 @@ private:
             ff[0] = st;
             ff[1] = end;
             ff[2] = params;
+            ff[3] = params_val;
             local_functions[ func_name ] = ff;           
         }
 
