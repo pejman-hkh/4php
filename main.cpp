@@ -554,17 +554,18 @@ private:
                 vars[index] = var_val;
             else
                 vars = var_val;
-
-            if( var_name == "SUPERGLOBALS" && index_t ) {
-                super_global_variables[ index ] = var_val;
-                variables[ index ] = var_val;
-            }   
-
         }
-       
+
+
         //var empty;
         var &out = index_t ? vars[ index ] : vars ;
 
+
+        if( var_name == "SUPERGLOBALS" && index_t ) {
+            super_global_variables[ index ] = var_val;
+            variables[ index ] = var_val;
+        }
+        
         if( tokens[offset][0] == LEFT_BRACKET ) {
             return do_variable( out, var_name );
         } 
