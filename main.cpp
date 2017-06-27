@@ -397,6 +397,7 @@ private:
 
             val = do_variable( variables[ var_name ], var_name );
 
+
             return true;
         } else if( tokens[offset][0] == LEFT_PAREN ) {
             offset++;
@@ -464,6 +465,9 @@ private:
             variables[ tokens[offset][1] ] = temp_variables[ tokens[offset][1] ];
             offset++;
             return true;
+        } else if ( tokens[offset][0] == PLUS_PLUS ) {
+            offset++;
+            return true;
         }
 
         return false;
@@ -496,10 +500,11 @@ private:
 
 
         if( tokens[ offset ][0].in_array({ STAR, PLUS, DOT, SLASH, DASH }) ) {
-            int operator_k = tokens[ offset ][0].to_int();
-            offset++;
 
             if( tokens[ offset ][0] == EQUAL ) {
+                int operator_k = tokens[ offset ][0].to_int();
+                offset++;
+
                 offset++;
                 var_val = do_operator();
                 
@@ -556,13 +561,11 @@ private:
             }   
 
         }
-
-        var empty;
+       
+        //var empty;
         var &out = index_t ? vars[ index ] : vars ;
 
         if( tokens[offset][0] == LEFT_BRACKET ) {
-
-
             return do_variable( out, var_name );
         } 
 
@@ -647,12 +650,13 @@ private:
     }
 
     var do_first_operator() {
-        
+   
         var ret;
         if( ! get_val( ret ) ) {
+
             return ret;
         }
-        
+ 
         if( tokens[offset][0] == EQ_OP ) {
             offset++;
             ret = ret == do_first_operator();
@@ -678,6 +682,7 @@ private:
         var ret = do_first_operator();
 
         if( tokens[offset][0] == STAR ) {
+
             offset++;
             ret *= do_second_operator();
         } else if( tokens[offset][0] == SLASH ) {
@@ -688,6 +693,7 @@ private:
             ret = ret && do_second_operator();
         }
 
+
         return ret;
     }
 
@@ -695,9 +701,10 @@ private:
 
         var ret = do_second_operator();
 
+    
         if( tokens[ offset ][0] == DOT ) {
             offset++;
-            ret = ret.concat( do_first_operator() );
+            ret = ret.concat( do_operator() );
         } else if( tokens[ offset ][0] == PLUS ) {
             offset++;
             ret += do_operator();
@@ -708,7 +715,6 @@ private:
             offset++;
             ret = ret || do_operator();
         }
-
 
         return ret;
     }
@@ -779,6 +785,7 @@ private:
             offset = ff[0].to_int()+1;
             var &params = ff[2];
             var &params_val = ff[3];
+
             for( auto x : params ) {
                 variables[ params[x] ] = out.isset( x ) ? out[x] : ( params_val.isset( x ) ? params_val[x] : "" );
             }
