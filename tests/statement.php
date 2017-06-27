@@ -28,7 +28,7 @@ if( $u == "2" ) {
 
 $r = [ 10 => [ 5 => 3 ], 'ss' => 'ss1' ];
 
-echo( "index value is : "+ $r[10][5]."\n" );
+echo( "index value is : ". $r[10][5]."\n" );
 
 //check if isset variable index
 if( $r[11] ) {
