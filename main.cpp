@@ -1,7 +1,7 @@
 #include "var.h"
 #include "request.h"
 #include "base64.h"
-
+#include <cmath>
 
 enum TokenType {
     NUMBER, IDENTIFIER, STRING, LEFT_PAREN, RIGHT_PAREN, LEFT_BRACKET,
@@ -521,9 +521,9 @@ private:
                         break;
                     case DOT :
                         if( index_t )
-                            vars[index] += var_val;
+                            vars[index] = vars[index].concat( var_val );
                         else
-                            vars += var_val; 
+                            vars = vars.concat( var_val ); 
                         break;
                     case PLUS :
                         if( index_t )
@@ -536,6 +536,12 @@ private:
                             vars[index] /= var_val;
                         else
                             vars /= var_val; 
+                        break; 
+                    case PERCENT :
+                        if( index_t )
+                            vars[index] %= var_val;
+                        else
+                            vars %= var_val; 
                         break; 
                     case DASH :
                         if( index_t )
@@ -682,8 +688,10 @@ private:
 
         var ret = do_first_operator();
 
-        if( tokens[offset][0] == STAR ) {
-
+        if( tokens[offset][0] == PERCENT ) {
+            offset++;
+            ret %= do_second_operator();
+        } else if( tokens[offset][0] == STAR ) {
             offset++;
             ret *= do_second_operator();
         } else if( tokens[offset][0] == SLASH ) {
@@ -1146,7 +1154,12 @@ var exten_usleep( var &p ) {
 
 var exten_time( var &p ) {
 
-    return std::time(0);;
+    return std::time(0);
+}
+
+var exten_round( var &p ) {
+
+    return round( p[0].to_num() );
 }
 
 var exten_exit( var &p )  {
@@ -1259,6 +1272,7 @@ int main( int argc, char** argv ) {
         exit(0);
     }
 
+  
 
     functions["sum"] = exten_sum;
     functions["echo"] = exten_echo;
@@ -1269,6 +1283,7 @@ int main( int argc, char** argv ) {
     functions["count"] = exten_count;
     functions["microtime"] = exten_microtime;
     functions["time"] = exten_time;
+    functions["round"] = exten_round;
     functions["usleep"] = exten_usleep;
     functions["exit"] = exten_exit;
     functions["die"] = exten_die;

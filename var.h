@@ -350,7 +350,11 @@ public:
 		return out;
 	}
 
-
+	var operator%=( var a ) {
+		var out = to_number<int>( container ) % to_number<int>( a.container );
+		container = out.string();
+		return out;
+	}
 
     int operator++() {
         int ret = atol(container.c_str()) + 1;
