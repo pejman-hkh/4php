@@ -397,6 +397,9 @@ private:
 
             val = do_variable( variables[ var_name ], var_name );
 
+            for( auto x : super_global_variables ) {
+                variables[x] = super_global_variables[x];
+            }
 
             return true;
         } else if( tokens[offset][0] == LEFT_PAREN ) {
@@ -560,19 +563,16 @@ private:
         //var empty;
         var &out = index_t ? vars[ index ] : vars ;
 
-
         if( var_name == "SUPERGLOBALS" && index_t ) {
             super_global_variables[ index ] = var_val;
-            variables[ index ] = var_val;
         }
         
         if( tokens[offset][0] == LEFT_BRACKET ) {
+
             return do_variable( out, var_name );
         } 
-
-
-        return out;
-        
+    
+        return out; 
     }
 
 
