@@ -501,7 +501,7 @@ private:
 
         if( tokens[ offset ][0].in_array({ STAR, PLUS, DOT, SLASH, DASH }) ) {
 
-            if( tokens[ offset ][0] == EQUAL ) {
+            if( tokens[ offset + 1 ][0] == EQUAL ) {
                 int operator_k = tokens[ offset ][0].to_int();
                 offset++;
 
