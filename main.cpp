@@ -6,10 +6,9 @@
 enum TokenType {
     NUMBER, IDENTIFIER, STRING, LEFT_PAREN, RIGHT_PAREN, LEFT_BRACKET,
     RIGHT_BRACKET, LEFT_BRACE, RIGHT_BRACE, PLUS, DASH, STAR, PERCENT,
-    SLASH, PLUS_EQUAL, DASH_EQUAL, STAR_EQUAL, PERCENT_EQUAL,
-    SLASH_EQUAL,NOT, COMMA, SEMICOLON, DOT, COLON, EQUAL, EQ_OP,
+    SLASH ,NOT, COMMA, SEMICOLON, DOT, COLON, EQUAL, EQ_OP,
     NOT_EQUAL, GREATER, GREATER_EQUAL, LESS, LESS_EQUAL, LOGICAL_AND,
-    LOGICAL_OR, IF, ELSE, WHILE, FOR, RETURN, BREAK, CONTINUE, FUNCTION, GLOBAL, LOCAL, EQ_ARR, TRUE, FALSE, ARRAY, VARIABLE, AS, FOREACH, START, PLUS_PLUS, START_PHP, END_PHP, QUESTION, ELSEIF, SHEBANG
+    LOGICAL_OR, IF, ELSE, WHILE, FOR, RETURN, BREAK, CONTINUE, FUNCTION, GLOBAL, LOCAL, EQ_ARR, TRUE, FALSE, ARRAY, VARIABLE, AS, FOREACH, START, PLUS_PLUS, START_PHP, END_PHP, QUESTION, ELSEIF, SHEBANG, DASH_DASH
 };
 
 
@@ -19,6 +18,7 @@ var keywords = var({
     {"function", FUNCTION}, {"global", GLOBAL}, { "true", TRUE }, { "false", FALSE }, { "array", ARRAY }, { "as", AS }, { "foreach", FOREACH }
 }).to_kv();
 
+var toks = {"NUMBER", "IDENTIFIER", "STRING", "LEFT_PAREN", "RIGHT_PAREN", "LEFT_BRACKET", "RIGHT_BRACKET", "LEFT_BRACE", "RIGHT_BRACE", "PLUS", "DASH", "STAR", "PERCENT", "SLASH", "NOT", "COMMA", "SEMICOLON", "DOT", "COLON", "EQUAL", "EQ_OP", "NOT_EQUAL", "GREATER", "GREATER_EQUAL", "LESS", "LESS_EQUAL", "LOGICAL_AND", "LOGICAL_OR", "IF", "ELSE", "WHILE", "FOR", "RETURN", "BREAK", "CONTINUE", "FUNCTION", "GLOBAL", "LOCAL", "EQ_ARR", "TRUE", "FALSE", "ARRAY", "VARIABLE", "AS", "FOREACH", "START", "PLUS_PLUS", "START_PHP", "END_PHP", "QUESTION", "ELSEIF", "SHEBANG"};
 
 std::string file_get_contents( std::string file_name ) {
     std::string content;
@@ -125,41 +125,32 @@ var tokenize( std::string &source, bool eval = false )
             case ':':
                 tokens[it++] = {COLON}; ++i; break;
             case '+':
-                /*if(i+1 != end && source[i+1] == '='){
-                    tokens[it++] = {PLUS_EQUAL}; i+=2;
-                } else*/ if(i+1 != end && source[i+1] == '+'){ 
+                if(i+1 != end && source[i+1] == '+'){ 
                 	tokens[it++] = {PLUS_PLUS}; i+=2;
                 } else {
                     tokens[it++] = {PLUS}; ++i;
                 }
                 break;
             case '-':
-                /*if(i+1 != end && source[i+1] == '='){
-                    tokens[it++] = {DASH_EQUAL}; i+=2;
-                } else {*/
+                if(i+1 != end && source[i+1] == '-'){
+                    tokens[it++] = {DASH_DASH}; i+=2;
+                } else {
                     tokens[it++] = {DASH}; ++i;
-                //}
+                }
                 break;
             case '*':
-                /*if(i+1 != end && source[i+1] == '='){
-                    tokens[it++] = {STAR_EQUAL}; i+=2;
-                } else {*/
-                    tokens[it++] = {STAR}; ++i;
-                //}
+                tokens[it++] = {STAR}; ++i;
+                
                 break;
             case '%':
-                /*if(i+1 != end && source[i+1] == '='){
-                    tokens[it++] = {PERCENT_EQUAL}; i+=2;
-                } else {*/
-                    tokens[it++] = {PERCENT}; ++i;
-                //}
+                
+                tokens[it++] = {PERCENT}; ++i;
+                
                 break;
             case '/':
                 if(i+1 != end && source[i+1] == '/') {
                     ++i; while(source[i] != '\n') ++i; ++i;
-                } /*else if(i+1 != end && source[i+1] == '='){
-                    tokens[it++] = {SLASH_EQUAL}; i+=2;
-                }*/ else {
+                } else {
                     tokens[it++] = {SLASH}; ++i;
                 }
                 break;
@@ -404,9 +395,7 @@ private:
 
             var var_name = tokens[ offset++ ][1];
 
-            do_variable( variables[ var_name ], var_name );
-
-            val = variables[ var_name ];
+            val = do_variable( variables[ var_name ], var_name );
 
             return true;
         } else if( tokens[offset][0] == LEFT_PAREN ) {
@@ -481,7 +470,7 @@ private:
     }
 
 
-    void do_variable( var &vars, var &var_name ) {
+    var do_variable( var &vars, var &var_name ) {
 
         var var_val;
 
@@ -568,15 +557,17 @@ private:
 
         }
 
-        
-        if( tokens[offset][0] == LEFT_BRACKET ) {
-            var empty;
-            var &out = vars.isset(index) ? vars[ index ] : empty ;
+        var empty;
+        var &out = index_t ? vars[ index ] : vars ;
 
-            do_variable( out, var_name );
+        if( tokens[offset][0] == LEFT_BRACKET ) {
+
+
+            return do_variable( out, var_name );
         } 
 
 
+        return out;
         
     }
 
@@ -1289,6 +1280,7 @@ int main( int argc, char** argv ) {
 
 	tokens = tokenize( source );
 
+ 
     interpreter i( tokens );
     i.start();
 
