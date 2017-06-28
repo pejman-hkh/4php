@@ -289,10 +289,7 @@ var tokenize( std::string &source, bool eval = false )
     return tokens;
 }
 
-//var variables;
-typedef var (*func)(var&);
-typedef std::map<std::string, func> funcs;
-funcs functions;
+var functions;
 static var constants;
 static var tokens;
 
@@ -332,7 +329,7 @@ private:
             } else if( tokens[offset][1] == "include") {
                 val = do_eval();
                 return true;
-            } else if( functions[ tokens[offset][1].string() ] ) {
+            } else if( functions.isset( tokens[offset][1] ) ) {
                 val = do_function();
                 return true;
             } else if( local_functions.isset( tokens[offset][1] ) ) {
@@ -813,7 +810,7 @@ private:
             return 0;   
         }
 
-        return functions[ func_name ]( out );
+        return functions[ func_name ].get()( out );
     }
 
     void find_function() {
@@ -1197,7 +1194,7 @@ var exten_get_defined_functions( var &p )  {
     var internal;
     int i = 0;
     for( auto x : functions ) {
-        internal[ i++ ] = x.first;
+        internal[ i++ ] = x;
 
     }
 
@@ -1256,7 +1253,15 @@ var exten_explode( var &p ) {
 
 }
 
+class test {
+    var peji( var &p ) {
 
+    }
+};
+
+void exit() {
+    exit(0);
+}
 
 int main( int argc, char** argv ) {
 
@@ -1272,7 +1277,7 @@ int main( int argc, char** argv ) {
         exit(0);
     }
 
-  
+
 
     functions["sum"] = exten_sum;
     functions["echo"] = exten_echo;

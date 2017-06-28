@@ -4,7 +4,6 @@
 #include <vector>
 #include <initializer_list>
 #include <unistd.h>
-#include <map>
 #include <ctime>
 #include <sys/time.h>
 
@@ -25,6 +24,8 @@ T to_number( const std::string& str ) {
 
 class var {
 public:
+    typedef var (*func)(var&);
+    func function;	
 	friend void echo( var a );
 	friend bool empty( var a );
 	void unset( var index = "" ) {
@@ -39,6 +40,10 @@ public:
 				}
 			}			
 		}
+	}
+
+	func get() {
+		return function;
 	}
 
 	var &sort() {
@@ -174,6 +179,12 @@ public:
         container = "";
     }
 
+	var( func a ) {
+		_type = "function";
+		function = a;
+	}
+
+
 	var( int a ) {
 		_type = "int";
 		container = to_string( a );
@@ -247,7 +258,7 @@ public:
 				}	
 			}
 		}
-
+		
 		return out;
 	}
 
@@ -260,6 +271,7 @@ public:
 			data.push_back( n );
 			i++;
 		}
+
 	}
 
 	var concat( var a ) {
@@ -470,6 +482,7 @@ private:
     std::vector<var> keys;
     std::vector<var> data;
     int _pos; 	
+
 };
 
 
