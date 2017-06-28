@@ -35,6 +35,7 @@ And add it to functions :
 ```cpp
 functions["implode"] = exten_implode;
 ```
+
 # Building
 
 ```code
