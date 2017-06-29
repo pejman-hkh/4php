@@ -9,11 +9,11 @@ $a = $o->imread("test.png");
 
 print_r( $o );
 
-$o->threshold( $a, 255,1,1,5,5 );
+$d = $o->threshold( $a, 100,255,1 );
 
 echo("after threshold");
 
-$o->imwrite("test1.png", $a );
+$o->imwrite("test1.png", $d );
 
 echo("end");
 
