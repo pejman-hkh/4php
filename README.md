@@ -90,6 +90,7 @@ var exten_implode( var &p )  {
 And add it to functions :
 
 # Building
+Before compile main.cpp you sould make every extension by hand in extension directory
 
 ```code
 g++ -std=c++11 main.cpp  -o 4php -ldl
