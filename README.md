@@ -112,7 +112,7 @@ functions["implode"] = exten_implode;
 # Building
 
 ```code
-g++ -std=c++11 main.cpp -o 4php
+g++ -std=c++11 main.cpp  -o 4php -ldl
 ```
 
 # Usage
