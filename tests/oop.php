@@ -4,7 +4,9 @@ $a = new test();
 
 print_r( $a );
 
-$a->pejmanhkh( "test", 1, 2 );
+$g = $a->pejmanhkh( "test", 1, 2 );
+
+print_r( $g );
 
 echo("dadsas\n");
 
