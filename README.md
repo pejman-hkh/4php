@@ -17,6 +17,8 @@ My porpus is converting php code too c++ and compile it at the end
 # OOP
 You can write c++ class and add call it in 4php
 
+See extension directory
+
 ```c++
 class test : var {
 private:
@@ -43,24 +45,6 @@ public:
     }
 };
 
-//init class
-var init_class_test( var &params ) {
-
-    std::shared_ptr<test> a = std::make_shared<test>();
-
-    var out;
-    //add method pejmanhkh to class test ...
-    out["pejmanhkh"] = std::function <var(var&)>( std::bind( &test::pejmanhkh, a, _1 ) );
-
-    //add method sss to class test ...
-   	out["ppp"] = std::function <var(var&)>( std::bind( &test::ppp, a, _1 ) );
-
-    return out;
-}
-```
-Add it to classes variable
-```c++
- classes["test"] = &init_class_test;
 ```
 
 Usage : 
@@ -104,10 +88,6 @@ var exten_implode( var &p )  {
 }
 ```
 And add it to functions :
-
-```cpp
-functions["implode"] = exten_implode;
-```
 
 # Building
 
