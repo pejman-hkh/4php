@@ -35,8 +35,13 @@ std::string file_get_contents( std::string file_name ) {
     return "";
 }
 
+var loaded_extension;
 
-void load_extension( const std::string &extension ) {
+bool load_extension( const std::string &extension ) {
+
+    if( loaded_extension.isset( extension ) ) return false;
+
+    loaded_extension[extension];
 
     typedef var(*func)(var&);
     typedef var(*func1)(var);
