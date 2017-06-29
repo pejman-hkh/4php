@@ -3,6 +3,7 @@
 #include "base64.h"
 #include <cmath>
 #include "class.h"
+//#include "opencv.h"
 
 enum TokenType {
     NUMBER, IDENTIFIER, STRING, LEFT_PAREN, RIGHT_PAREN, LEFT_BRACKET,
@@ -555,10 +556,7 @@ private:
             offset++;
             //call method
             if( vars.isset( method_name ) ) {
-                if( index_t )
-                    vars[index] = vars[ method_name ].get_m()( params );
-                else
-                    vars = vars[ method_name ].get_m()( params );
+                return vars[ method_name ].get_m()( params );
             }
 
         }
@@ -1342,6 +1340,7 @@ int main( int argc, char** argv ) {
 
     //class defination
     classes["test"] = &init_class_test;
+    //classes["opencv"] = &init_class_opencv;
 
 
 
