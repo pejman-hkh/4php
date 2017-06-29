@@ -6,6 +6,14 @@
 #include <unistd.h>
 #include <ctime>
 #include <sys/time.h>
+#include <functional>
+#include <memory>
+#include <cassert>
+
+
+void exit() {
+    exit(0);
+}
 
 template <typename T>
 std::string to_string(T const& value) {
@@ -21,11 +29,16 @@ T to_number( const std::string& str ) {
     ss >> result;
     return result;
 }
+using namespace std::placeholders;
 
 class var {
 public:
     typedef var (*func)(var&);
-    func function;	
+    typedef var (*func1)(var);
+    func function;
+    func1 function1;
+    std::function <var(var&)> methods;
+    std::function <var(var)> methods1;
 	friend void echo( var a );
 	friend bool empty( var a );
 	void unset( var index = "" ) {
@@ -44,6 +57,18 @@ public:
 
 	func get() {
 		return function;
+	}
+
+	func1 get_s() {
+		return function1;
+	}
+
+	std::function <var(var&)> get_m() {
+		return methods;
+	}
+
+	std::function <var(var)> get_ms() {
+		return methods1;
 	}
 
 	var &sort() {
@@ -179,11 +204,29 @@ public:
         container = "";
     }
 
+	var( std::function <var(var&)> a ) {
+		_type = "class";
+		methods = a;
+		container = "Function";
+	}
+
+	var( std::function <var(var)> a ) {
+		_type = "class";
+		methods1 = a;
+		container = "Function";
+	}
+
 	var( func a ) {
 		_type = "function";
 		function = a;
+		container = "Function";
 	}
 
+	var( func1 a ) {
+		_type = "function";
+		function1 = a;
+		container = "Function";
+	}
 
 	var( int a ) {
 		_type = "int";
@@ -521,6 +564,8 @@ void print_r( var a, std::string &ret_str, std::string tab = "" ) {
         }
 
         ret_str += tab + ")\n";
+    } else if ( a.type() == "function" ) {
+    	ret_str += "function";
     } else {
         ret_str += a.string();
     }
@@ -532,3 +577,4 @@ void print_r( var a ) {
 	std::cout << out;
 }
 
+static var classes;

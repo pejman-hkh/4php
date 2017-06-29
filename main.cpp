@@ -2,20 +2,21 @@
 #include "request.h"
 #include "base64.h"
 #include <cmath>
+#include "class.h"
 
 enum TokenType {
     NUMBER, IDENTIFIER, STRING, LEFT_PAREN, RIGHT_PAREN, LEFT_BRACKET,
     RIGHT_BRACKET, LEFT_BRACE, RIGHT_BRACE, PLUS, DASH, STAR, PERCENT,
     SLASH ,NOT, COMMA, SEMICOLON, DOT, COLON, EQUAL, EQ_OP,
     NOT_EQUAL, GREATER, GREATER_EQUAL, LESS, LESS_EQUAL, LOGICAL_AND,
-    LOGICAL_OR, IF, ELSE, WHILE, FOR, RETURN, BREAK, CONTINUE, FUNCTION, GLOBAL, LOCAL, EQ_ARR, TRUE, FALSE, ARRAY, VARIABLE, AS, FOREACH, START, PLUS_PLUS, START_PHP, END_PHP, QUESTION, ELSEIF, SHEBANG, DASH_DASH
+    LOGICAL_OR, IF, ELSE, WHILE, FOR, RETURN, BREAK, CONTINUE, FUNCTION, GLOBAL, LOCAL, EQ_ARR, TRUE, FALSE, ARRAY, VARIABLE, AS, FOREACH, START, PLUS_PLUS, START_PHP, END_PHP, QUESTION, ELSEIF, SHEBANG, DASH_DASH, NEW, OBJECT_OPERATOR
 };
 
 
 var keywords = var({
     {"if", IF}, {"else", ELSE}, {"elseif", ELSEIF}, {"while", WHILE}, {"for", FOR},
     {"return", RETURN}, {"break", BREAK}, {"continue", CONTINUE},
-    {"function", FUNCTION}, {"global", GLOBAL}, { "true", TRUE }, { "false", FALSE }, { "array", ARRAY }, { "as", AS }, { "foreach", FOREACH }
+    {"function", FUNCTION}, {"global", GLOBAL}, { "new", NEW }, { "true", TRUE }, { "false", FALSE }, { "array", ARRAY }, { "as", AS }, { "foreach", FOREACH }
 }).to_kv();
 
 var toks = {"NUMBER", "IDENTIFIER", "STRING", "LEFT_PAREN", "RIGHT_PAREN", "LEFT_BRACKET", "RIGHT_BRACKET", "LEFT_BRACE", "RIGHT_BRACE", "PLUS", "DASH", "STAR", "PERCENT", "SLASH", "NOT", "COMMA", "SEMICOLON", "DOT", "COLON", "EQUAL", "EQ_OP", "NOT_EQUAL", "GREATER", "GREATER_EQUAL", "LESS", "LESS_EQUAL", "LOGICAL_AND", "LOGICAL_OR", "IF", "ELSE", "WHILE", "FOR", "RETURN", "BREAK", "CONTINUE", "FUNCTION", "GLOBAL", "LOCAL", "EQ_ARR", "TRUE", "FALSE", "ARRAY", "VARIABLE", "AS", "FOREACH", "START", "PLUS_PLUS", "START_PHP", "END_PHP", "QUESTION", "ELSEIF", "SHEBANG"};
@@ -132,7 +133,9 @@ var tokenize( std::string &source, bool eval = false )
                 }
                 break;
             case '-':
-                if(i+1 != end && source[i+1] == '-'){
+                if(i+1 != end && source[i+1] == '>'){
+                    tokens[it++] = {OBJECT_OPERATOR}; i+=2;
+                } else if(i+1 != end && source[i+1] == '-'){
                     tokens[it++] = {DASH_DASH}; i+=2;
                 } else {
                     tokens[it++] = {DASH}; ++i;
@@ -321,8 +324,8 @@ private:
 
     bool get_val( var &val ) {
 
-
         if( tokens[offset][0] == IDENTIFIER ) {
+
             if( tokens[offset][1] == "eval") {
                 val = do_eval();
                 return true;
@@ -468,11 +471,47 @@ private:
         } else if ( tokens[offset][0] == PLUS_PLUS ) {
             offset++;
             return true;
+        } else if( tokens[offset][0] == NEW ) {
+
+            offset++;
+            val = make_class();
+            return true;
         }
 
         return false;
     }
 
+    var make_class() {
+   
+        var class_name = tokens[offset][1];
+        offset++;
+        offset++;
+
+        var params;
+        int i = 0;
+        while( true ) {
+
+            if( tokens[offset][0] == RIGHT_PAREN ) {
+                break;
+            }
+
+            params[i++] = do_operator();
+
+            if( tokens[offset][0] == COMMA ) {
+                offset++;
+                continue;
+            }
+
+        }
+        offset++;
+        //define new object
+        if( classes.isset( class_name ) ) {
+           return classes[ class_name ].get()( params ); 
+        }
+
+
+        return 0;
+    }
 
     var do_variable( var &vars, var &var_name ) {
 
@@ -488,7 +527,37 @@ private:
 
             offset++;
             index_t = true;
-        }    
+        }
+
+        if( tokens[offset][0] == OBJECT_OPERATOR ) {
+            offset++;
+
+            var method_name = tokens[offset++][1];
+            offset++;
+
+            var params;
+            int i = 0;
+            while( true ) {
+
+                if( tokens[offset][0] == RIGHT_PAREN ) {
+                    break;
+                }
+
+                params[i++] = do_operator();
+
+                if( tokens[offset][0] == COMMA ) {
+                    offset++;
+                    continue;
+                }
+
+            }
+
+            offset++;
+            //call method
+            if( vars.isset( method_name ) )
+                vars[ method_name ].get_m()( params );
+
+        }
 
         if( tokens[offset][0] == PLUS_PLUS ) {
             offset++;
@@ -1253,16 +1322,6 @@ var exten_explode( var &p ) {
 
 }
 
-class test {
-    var peji( var &p ) {
-
-    }
-};
-
-void exit() {
-    exit(0);
-}
-
 int main( int argc, char** argv ) {
 
     if( argv[1] == NULL ) {
@@ -1277,8 +1336,12 @@ int main( int argc, char** argv ) {
         exit(0);
     }
 
+    //class defination
+    classes["test"] = &init_class_test;
 
 
+
+    //function defination
     functions["sum"] = exten_sum;
     functions["echo"] = exten_echo;
 	functions["print"] = exten_echo;
@@ -1292,16 +1355,11 @@ int main( int argc, char** argv ) {
     functions["usleep"] = exten_usleep;
     functions["exit"] = exten_exit;
     functions["die"] = exten_die;
-
     functions["implode"] = exten_implode;
     functions["explode"] = exten_explode;
     functions["define"] = exten_define;
     functions["request"] = exten_request;
-
-
     functions["get_defined_functions"] = exten_get_defined_functions;
-
-
     functions["base64_encode"] = exten_base64_encode;
     functions["base64_decode"] = exten_base64_decode;
 
