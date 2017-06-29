@@ -35,6 +35,35 @@ std::string file_get_contents( std::string file_name ) {
     return "";
 }
 
+
+void load_extension( const std::string &extension ) {
+
+    typedef var(*func)(var&);
+    typedef var(*func1)(var);
+
+    char *error;
+    void *myso = dlopen( ("extension/"+extension+"/"+extension+".so").c_str(), RTLD_NOW);
+
+    func1 load_functions = (func1)dlsym(myso, "load_functions" );
+    if ((error = dlerror()) == NULL)  {
+        var funcs = load_functions(0);
+        for( auto d : funcs ) {
+            functions[d] = funcs[d];
+        } 
+    } else {
+        //puts( error );
+    }
+
+    func load = (func)dlsym(myso, "load" );
+    if ((error = dlerror()) == NULL)  {
+        classes[extension] = load;
+    } else {
+        //puts(error);
+    }
+
+    //dlclose(myso);    
+}
+
 static bool shebang_seted = false;
 
 var tokenize( std::string &source, bool eval = false )
@@ -96,7 +125,7 @@ var tokenize( std::string &source, bool eval = false )
             continue;
         }
 
-    	passes = "";
+        passes = "";
         int start = i;
         switch(source[i])
         {
@@ -124,7 +153,7 @@ var tokenize( std::string &source, bool eval = false )
                 tokens[it++] = {COLON}; ++i; break;
             case '+':
                 if(i+1 != end && source[i+1] == '+'){ 
-                	tokens[it++] = {PLUS_PLUS}; i+=2;
+                    tokens[it++] = {PLUS_PLUS}; i+=2;
                 } else {
                     tokens[it++] = {PLUS}; ++i;
                 }
@@ -169,7 +198,7 @@ var tokenize( std::string &source, bool eval = false )
                 break;
 
             case '<':
-            	if(i+1 != end && source[i+1] == '='){
+                if(i+1 != end && source[i+1] == '='){
                     tokens[it++] = {LESS_EQUAL}; i+=2;
                 } else {
                     tokens[it++] = {LESS}; ++i;
@@ -216,7 +245,7 @@ var tokenize( std::string &source, bool eval = false )
 
                 while(!(source[i] == '"' && source[i-1] != '\\')) passes += source[i++];
                 ++i;
-	            tokens[it++] = {STRING, var(passes).replace( var( { { "\\n", "\n" }, { "\\\"", "\"" }, { "\\r", "\r"}, { "\\t", "\t" }  } ).to_kv() ) };
+                tokens[it++] = {STRING, var(passes).replace( var( { { "\\n", "\n" }, { "\\\"", "\"" }, { "\\r", "\r"}, { "\\t", "\t" }  } ).to_kv() ) };
 
                 break;            
             case '\'':
@@ -256,7 +285,7 @@ var tokenize( std::string &source, bool eval = false )
                     break;
                 } else if(std::isalpha(source[i]) || source[i] == '_' || source[i] == '$' ) {
                     if( source[i] == '$' )
-                    	++i;
+                        ++i;
 
                     while((std::isalnum(source[i]) || source[i] == '_')) passes += source[i++];
                     auto kw = keywords[ passes ];
@@ -504,6 +533,9 @@ private:
 
         }
         offset++;
+
+        load_extension( class_name.string() );
+
         //define new object
         if( classes.isset( class_name ) ) {
            return classes[ class_name ].get()( params ); 
@@ -1165,6 +1197,7 @@ var exten_define( var &p )  {
     return 0;
 }
 
+
 int main( int argc, char** argv ) {
 
     if( argv[1] == NULL ) {
@@ -1172,52 +1205,18 @@ int main( int argc, char** argv ) {
         exit(0);
     }
 
-	std::string source = file_get_contents( argv[1] );
+    std::string source = file_get_contents( argv[1] );
 
     if( source == "" ) {
         std::cout << "File open problem" << std::endl;
         exit(0);
     }
 
-
-    typedef var(*func)(var&);
-    typedef var(*func1)(var);
-
-
-    //load ini.php
-    std::string ini_source = file_get_contents("ini.php");
-    var ini_toks = tokenize( ini_source );
-    interpreter ini( ini_toks );
-    ini.start();
-
-    var &ini_vars = ini.get_variables();
-
-    var &extensions = ini_vars["extension"];
-    char *error;
-    for( auto x : extensions ) {
-        
-
-        void *myso = dlopen( ("extension/"+extensions[x].string()+"/"+extensions[x].string()+".so").c_str(), RTLD_NOW);
-        
-
-        func1 load_functions = (func1)dlsym(myso, "load_functions" );
-        if ((error = dlerror()) == NULL)  {
-            var funcs = load_functions(0);
-            for( auto d : funcs ) {
-                functions[d] = funcs[d];
-            } 
-        }
-
-        func load = (func)dlsym(myso, "load" );
-        if ((error = dlerror()) == NULL)  {
-            classes[extensions[x]] = load;
-        }
-    }
-
     functions["define"] = exten_define;
 
-
-	tokens = tokenize( source );
+    load_extension("standard");
+    
+    tokens = tokenize( source );
 
  
     interpreter i( tokens );
