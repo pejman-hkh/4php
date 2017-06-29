@@ -3,7 +3,7 @@ Simple php interpreter Inspire from Binaryphp
 
 1. No syntax check
 2. No run time error
-3. Not support PHP OOP yet
+3. Not support PHP Class defination ( OOP supported )
 4. Not support switch statement
 5. Not support php casting
 6. Not support do while
@@ -13,6 +13,79 @@ This simple php interpreter written in c++11 and can be used as template engine 
 
 # Porpus
 My porpus is converting php code too c++ and compile it at the end
+
+# OOP
+You can write c++ class and add call it in 4php
+
+```c++
+class test : var {
+private:
+	int z = 10;
+public:
+	test() {
+		std::cout << "construced" << std::endl;
+	}
+
+    var pejmanhkh( var &p ) {
+    	print_r( p );
+    	std::cout << "z is " << z << std::endl;
+    	z = 4;
+    	return 0;
+    }
+
+    var ppp( var &p ) {
+    	std::cout << "z is " << z << std::endl;
+    	return 0;
+    }
+
+    ~test() {
+    	std::cout << "destructed" << std::endl;
+    }
+};
+
+//init class
+var init_class_test( var &params ) {
+
+    std::shared_ptr<test> a = std::make_shared<test>();
+
+    var out;
+    //add method pejmanhkh to class test ...
+    out["pejmanhkh"] = std::function <var(var&)>( std::bind( &test::pejmanhkh, a, _1 ) );
+
+    //add method sss to class test ...
+   	out["ppp"] = std::function <var(var&)>( std::bind( &test::ppp, a, _1 ) );
+
+    return out;
+}
+```
+Add it to classes variable
+```c++
+ classes["test"] = &init_class_test;
+```
+
+Usage : 
+```php
+<?4php
+
+$a = new test();
+
+print_r( $a );
+
+$a->pejmanhkh( "test", 1, 2 );
+
+echo("dadsas\n");
+
+$a->ppp( "test" );
+
+
+echo("dadsas\n");
+
+$aa = new test();
+$aa->pejmanhkh( "test", 1, 2 );
+
+
+?>
+```
 
 # Writing Extension
 writing extension in c++ is very easy
@@ -72,7 +145,6 @@ function test() {
 test();
 ?>
 ```
-
 
 # Update
 1. Constant added
