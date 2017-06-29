@@ -11,7 +11,7 @@ public:
     	print_r( p );
     	std::cout << "z is " << z << std::endl;
     	z = 4;
-    	return 0;
+    	return { "out", "out1" };
     }
 
     var ppp( var &p ) {

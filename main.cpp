@@ -554,8 +554,12 @@ private:
 
             offset++;
             //call method
-            if( vars.isset( method_name ) )
-                vars[ method_name ].get_m()( params );
+            if( vars.isset( method_name ) ) {
+                if( index_t )
+                    vars[index] = vars[ method_name ].get_m()( params );
+                else
+                    vars = vars[ method_name ].get_m()( params );
+            }
 
         }
 
