@@ -8,7 +8,7 @@
 #include <sys/time.h>
 #include <functional>
 #include <memory>
-#include <cassert>
+
 
 
 void exit() {
@@ -30,6 +30,23 @@ T to_number( const std::string& str ) {
     return result;
 }
 using namespace std::placeholders;
+
+template<class T>
+class refrence {
+public:
+    refrence() {}  
+    int set( const T &t ) {
+        vect.push_back( t );
+        return vect.size() - 1;
+    }
+
+    T &get( int index ) {
+        return vect[index];
+    }
+private:
+    std::vector< T > vect; 
+};
+
 
 class var {
 public:
@@ -578,3 +595,5 @@ void print_r( var a ) {
 }
 
 static var classes;
+static var functions;
+static var constants;

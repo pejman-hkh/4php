@@ -1,9 +1,5 @@
 #include "var.h"
-#include "request.h"
-#include "base64.h"
-#include <cmath>
-#include "class.h"
-//#include "opencv.h"
+#include <dlfcn.h>
 
 enum TokenType {
     NUMBER, IDENTIFIER, STRING, LEFT_PAREN, RIGHT_PAREN, LEFT_BRACKET,
@@ -293,8 +289,6 @@ var tokenize( std::string &source, bool eval = false )
     return tokens;
 }
 
-var functions;
-static var constants;
 static var tokens;
 
 class interpreter {
@@ -302,6 +296,11 @@ public:
 
     interpreter( var &tokens ) : tokens( tokens ) {
 
+    }
+
+
+    var &get_variables() {
+        return variables;
     }
 
     void start() {
@@ -559,6 +558,10 @@ private:
                 return vars[ method_name ].get_m()( params );
             }
 
+        }
+
+        if( index == "" ) {
+            index = vars.count();
         }
 
         if( tokens[offset][0] == PLUS_PLUS ) {
@@ -1140,6 +1143,7 @@ private:
         start();
     }
 
+
     void error( var error ) {
         echo( error );
     }
@@ -1153,175 +1157,12 @@ private:
     var super_global_variables;
 };
 
-
-
-var exten_sum( var &p ) {
-    var out = 0;
-    for( auto x : p ) {
-        out += p[x];
-    }
-    return out;
-}
-
-
-var exten_echo( var &p ) {
-    echo( p[0] );
-    
-    return 0;
-}
-
-var exten_print_r( var &p ) {
-
-    if( p[1] == "true" ) {
-        std::string out;
-        print_r( p[0], out );
-        return out;
-    }
-    else 
-       print_r( p[0] );
-    
-    return 0;
-}
-
-var exten_is_array( var &p ) {
-
-    if( p[0].type() == "array" )
-       return true;
-   
-    return false;
-}
-
-var exten_type( var &p ) {
-    return p[0].type();
-}
-
-var exten_count( var &p ) {
-    if( p[0].type() == "array" ) {
-        return p[0].count();
-    }
-
-    return 0;
-}
-
-var exten_microtime( var &p ) {
-    struct timeval time;
-    gettimeofday(&time, NULL);
-    double microsec = (float)time.tv_usec / (float)1000000 ;//time.tv_sec ;
-
-    return microsec;
-}
-
-
-var exten_usleep( var &p ) {
-    long t = p[0].to_num();
-    std::cout.flush();
-
-    usleep( t );
-    return 0;
-}
-
-var exten_time( var &p ) {
-
-    return std::time(0);
-}
-
-var exten_round( var &p ) {
-
-    return round( p[0].to_num() );
-}
-
-var exten_exit( var &p )  {
-    exit(0);
-    return 0;
-}
-
-var exten_die( var &p )  {
-    echo( p[0] );
-    exit(0);
-    return 0;
-}
-
-var exten_implode( var &p )  {
-    var out = "";
-    var pre = "";
-    for( auto x : p[1] ) {
-        out += pre+p[1][x];
-        pre = p[0];
-    }
-
-    return out;
-}
-
 var exten_define( var &p )  {
     if( ! constants.isset( p[0] ) ) {
         constants[ p[0] ] = p[1];
     }
 
     return 0;
-}
-
-
-var exten_get_defined_functions( var &p )  {
-    var internal;
-    int i = 0;
-    for( auto x : functions ) {
-        internal[ i++ ] = x;
-
-    }
-
-    var out;
-    out["internal"] = internal; 
-
-    return out;
-}
-
-
-var exten_base64_encode( var &p )  {
-
-    std::string str = p[0].string();
-    return php_base64_encode( str, str.length() );
-}
-
-
-var exten_base64_decode( var &p )  {
-    std::string str = p[0].string();
-    return php_base64_decode( str, str.length() );
-}
-
-
-var exten_request( var &p )  {
-    request req;
-
-    var out;
-    out["post"] = req.post();
-    out["get"] = req.get();
-    out["server"] = req.server();
-
-    return out;
-}
-
-
-var exten_explode( var &p ) {
-    var out;
-    size_t pos = 0;
-    size_t start = 0;
-    std::string container = p[1].string();
-    std::string delim = p[0].string();
-
-    int i = 0;
-    while ( ( pos = container.find( delim, pos ) ) != std::string::npos ) {
-
-        out[ i++ ] = container.substr( start, ( pos - start ) );
-
-        pos += delim.length();
-
-        start = pos;
-
-    }   
-
-    out[ i ] = container.substr( start, container.length() );
-    return std::move( out );
-
 }
 
 int main( int argc, char** argv ) {
@@ -1338,33 +1179,42 @@ int main( int argc, char** argv ) {
         exit(0);
     }
 
-    //class defination
-    classes["test"] = &init_class_test;
-    //classes["opencv"] = &init_class_opencv;
+
+    typedef var(*func)(var&);
+    typedef var(*func1)(var);
 
 
+    //load ini.php
+    std::string ini_source = file_get_contents("ini.php");
+    var ini_toks = tokenize( ini_source );
+    interpreter ini( ini_toks );
+    ini.start();
 
-    //function defination
-    functions["sum"] = exten_sum;
-    functions["echo"] = exten_echo;
-	functions["print"] = exten_echo;
-	functions["print_r"] = exten_print_r;
-	functions["is_array"] = exten_is_array;
-	functions["type"] = exten_type;
-    functions["count"] = exten_count;
-    functions["microtime"] = exten_microtime;
-    functions["time"] = exten_time;
-    functions["round"] = exten_round;
-    functions["usleep"] = exten_usleep;
-    functions["exit"] = exten_exit;
-    functions["die"] = exten_die;
-    functions["implode"] = exten_implode;
-    functions["explode"] = exten_explode;
+    var &ini_vars = ini.get_variables();
+
+    var &extensions = ini_vars["extension"];
+    char *error;
+    for( auto x : extensions ) {
+        
+
+        void *myso = dlopen( ("extension/"+extensions[x].string()+"/"+extensions[x].string()+".so").c_str(), RTLD_NOW);
+        
+
+        func1 load_functions = (func1)dlsym(myso, "load_functions" );
+        if ((error = dlerror()) == NULL)  {
+            var funcs = load_functions(0);
+            for( auto d : funcs ) {
+                functions[d] = funcs[d];
+            } 
+        }
+
+        func load = (func)dlsym(myso, "load" );
+        if ((error = dlerror()) == NULL)  {
+            classes[extensions[x]] = load;
+        }
+    }
+
     functions["define"] = exten_define;
-    functions["request"] = exten_request;
-    functions["get_defined_functions"] = exten_get_defined_functions;
-    functions["base64_encode"] = exten_base64_encode;
-    functions["base64_decode"] = exten_base64_decode;
 
 
 	tokens = tokenize( source );
