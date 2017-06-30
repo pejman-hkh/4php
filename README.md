@@ -15,7 +15,7 @@ This simple php interpreter written in c++11 and can be used as template engine 
 My porpus is converting php code too c++ and compile it at the end
 
 # OOP
-You can write c++ class and add call it in 4php
+You can write c++ class and call it in 4php
 
 See extension directory
 
