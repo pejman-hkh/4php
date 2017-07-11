@@ -656,7 +656,7 @@ private:
 
 
 void echo( var i ) {
-    if( i.type() == PHP_ARRAY ) {
+    if( i._type == PHP_ARRAY ) {
         std::cout << "Array" << std::endl;
     } else {
         std::cout << i.string();

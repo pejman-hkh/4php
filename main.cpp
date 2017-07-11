@@ -630,125 +630,133 @@ private:
     }
 
     var do_variable( var &vars, var &var_name ) {
-
         var var_val;
-
         var index;
         bool index_t = false;
-        if( tokens[offset][0] == LEFT_BRACKET ) {
+        if( tokens[offset][0] == EQUAL ) {
 
             offset++;
 
-            index = do_operator();
+            vars = do_operator();
 
-            offset++;
-            index_t = true;
-        }
+            return vars;
+        } else {
 
-        if( tokens[offset][0] == OBJECT_OPERATOR ) {
-            offset++;
+            if( tokens[offset][0] == LEFT_BRACKET ) {
 
-            var method_name = tokens[offset++][1];
-            offset++;
+                offset++;
 
-            var params;
-            int i = 0;
-            while( true ) {
+                index = do_operator();
 
-                if( tokens[offset][0] == RIGHT_PAREN ) {
-                    break;
+                offset++;
+                index_t = true;
+            }
+
+            if( tokens[offset][0] == OBJECT_OPERATOR ) {
+                offset++;
+
+                var method_name = tokens[offset++][1];
+                offset++;
+
+                var params;
+                int i = 0;
+                while( true ) {
+
+                    if( tokens[offset][0] == RIGHT_PAREN ) {
+                        break;
+                    }
+
+                    params[i++] = do_operator();
+
+                    if( tokens[offset][0] == COMMA ) {
+                        offset++;
+                        continue;
+                    }
+
                 }
 
-                params[i++] = do_operator();
-
-                if( tokens[offset][0] == COMMA ) {
-                    offset++;
-                    continue;
+                offset++;
+                //call method
+                if( vars.isset( method_name ) ) {
+                    return vars[ method_name ].get_m()( params );
                 }
 
             }
 
-            offset++;
-            //call method
-            if( vars.isset( method_name ) ) {
-                return vars[ method_name ].get_m()( params );
+            if( tokens[offset][0] == PLUS_PLUS ) {
+                offset++;
+                if( index_t )
+                    vars[index] += 1;
+                else
+                    vars += 1;
             }
 
-        }
 
+            if( index == "" ) {
+                index = vars.count();
+            }
 
-        if( tokens[offset][0] == PLUS_PLUS ) {
-            offset++;
-            if( index_t )
-                vars[index] += 1;
-            else
-                vars += 1;
-        }
-
-
-        if( index == "" ) {
-            index = vars.count();
-        }
-
-        if( tokens[ offset ][0] == STAR || tokens[ offset ][0] == PLUS || tokens[ offset ][0] == DOT || tokens[ offset ][0] == SLASH || tokens[ offset ][0] == DASH  ) {
-
-            if( tokens[ offset + 1 ][0] == EQUAL ) {
-                int operator_k = tokens[ offset ][0].to_int();
+            if( tokens[offset][0] == EQUAL ) {
                 offset++;
 
-                offset++;
                 var_val = do_operator();
-                
-                switch( operator_k ) {
-                    case STAR :
-                        if( index_t )
-                            vars[index] *= var_val;
-                        else
-                            vars *= var_val; 
-                        break;
-                    case DOT :
-                        if( index_t )
-                            vars[index] = vars[index].concat( var_val );
-                        else
-                            vars = vars.concat( var_val ); 
-                        break;
-                    case PLUS :
-                        if( index_t )
-                            vars[index] += var_val;
-                        else
-                            vars += var_val; 
-                        break;
-                    case SLASH :
-                        if( index_t )
-                            vars[index] /= var_val;
-                        else
-                            vars /= var_val; 
-                        break; 
-                    case PERCENT :
-                        if( index_t )
-                            vars[index] %= var_val;
-                        else
-                            vars %= var_val; 
-                        break; 
-                    case DASH :
-                        if( index_t )
-                            vars[index] -= var_val;
-                        else
-                            vars -= var_val; 
-                        break;  
+
+                if( index_t )
+                    vars[index] = var_val;
+                else
+                    vars = var_val;
+            } else if( tokens[ offset ][0] == STAR || tokens[ offset ][0] == PLUS || tokens[ offset ][0] == DOT || tokens[ offset ][0] == SLASH || tokens[ offset ][0] == DASH  ) {
+
+                if( tokens[ offset + 1 ][0] == EQUAL ) {
+                    int operator_k = tokens[ offset ][0].to_int();
+                    offset++;
+
+                    offset++;
+                    var_val = do_operator();
+                    
+                    switch( operator_k ) {
+                        case STAR :
+                            if( index_t )
+                                vars[index] *= var_val;
+                            else
+                                vars *= var_val; 
+                            break;
+                        case DOT :
+                            if( index_t )
+                                vars[index] = vars[index].concat( var_val );
+                            else
+                                vars = vars.concat( var_val ); 
+                            break;
+                        case PLUS :
+                            if( index_t )
+                                vars[index] += var_val;
+                            else
+                                vars += var_val; 
+                            break;
+                        case SLASH :
+                            if( index_t )
+                                vars[index] /= var_val;
+                            else
+                                vars /= var_val; 
+                            break; 
+                        case PERCENT :
+                            if( index_t )
+                                vars[index] %= var_val;
+                            else
+                                vars %= var_val; 
+                            break; 
+                        case DASH :
+                            if( index_t )
+                                vars[index] -= var_val;
+                            else
+                                vars -= var_val; 
+                            break;  
+                    }
+
                 }
-
             }
-        } else if( tokens[offset][0] == EQUAL ) {
-            offset++;
-
-            var_val = do_operator();
-
-            if( index_t )
-                vars[index] = var_val;
-            else
-                vars = var_val;
         }
+
 
 
         //var empty;
@@ -968,7 +976,7 @@ private:
     }
 
     var do_function( bool local = false ) {
-        std::string func_name = tokens[ offset++ ][1].string();
+        var &func_name = tokens[ offset++ ][1];
         offset++;
         
         int index = 0;
