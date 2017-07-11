@@ -795,7 +795,7 @@ private:
             if( kind != "eval" ) {
                  if( new_toks[0][0] == START_PHP ) {
                     new_toks.unset(0);
-                    if( new_toks[1][0] == IDENTIFIER && new_toks[1][1].in_array({"php", "4php"}) ) {
+                    if( new_toks[1][0] == IDENTIFIER && ( new_toks[1][1] == "php" || new_toks[1][1] == "4php" ) ) {
                         new_toks.unset(1);
                     }
 
@@ -944,14 +944,14 @@ private:
         int index = 0;
         var array;
         while( true ) {
-            if( tokens[offset][0].in_array( { RIGHT_BRACKET, RIGHT_PAREN, RIGHT_BRACE } )  ) {
+            if( tokens[offset][0] == RIGHT_BRACKET || tokens[offset][0] == RIGHT_PAREN || tokens[offset][0] == RIGHT_BRACE  ) {
                 offset++;
                 break;
             }
 
             var gindex = do_operator();
 
-            if( tokens[offset][0].in_array( { EQ_ARR, COLON } ) ) {
+            if( tokens[offset][0] == EQ_ARR || tokens[offset][0] == COLON ) {
                 offset++;
                 array[gindex] = do_operator();
             } else {
@@ -975,7 +975,7 @@ private:
         var out;
         while( true ) {
 
-            if( tokens[ offset ][0].in_array( {  RIGHT_PAREN } ) ) {
+            if( tokens[ offset ][0] == RIGHT_PAREN ) {
                 offset++;
                 break;
             }  
@@ -1302,7 +1302,6 @@ var exten_define( var &p )  {
     return 0;
 }
 
-
 int main( int argc, char** argv ) {
 
     if( argv[1] == NULL ) {
@@ -1318,7 +1317,22 @@ int main( int argc, char** argv ) {
     }
 
     functions["define"] = exten_define;
-
+   /* functions["sum"] = exten_sum;
+    functions["echo"] = exten_echo;
+    functions["print"] = exten_echo;
+    functions["print_r"] = exten_print_r;
+    functions["is_array"] = exten_is_array;
+    functions["type"] = exten_type;
+    functions["count"] = exten_count;
+    functions["microtime"] = exten_microtime;
+    functions["time"] = exten_time;
+    functions["round"] = exten_round;
+    functions["usleep"] = exten_usleep;
+    functions["exit"] = exten_exit;
+    functions["die"] = exten_die;
+    functions["implode"] = exten_implode;
+    functions["explode"] = exten_explode;
+    functions["get_defined_functions"] = exten_get_defined_functions;*/
 
     load_extension("standard");
     

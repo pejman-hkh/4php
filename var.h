@@ -124,25 +124,32 @@ public:
 	var( char *a ) : _type(PHP_STRING), _string( a )  {}
 
     var( bool a ) : _type(PHP_INT) {
-        if( a )
-            _int = 1;
-        else
-            _int = 0;
+    	_int = a ? 1 : 0;
         
     }
 
 	explicit operator bool() 
 	{
-		if( _type == PHP_STRING ) {
-			if( ( _string != "0" && _string != "" ) )
-				return true;
-		} else if( _type == PHP_INT ) {
-			if( _int != 0 )
-				return true;
-		} else if( _type == PHP_ARRAY ) {
-			if( this->count() > 0 )
-				return true;
+
+		switch( _type ) {
+			case PHP_STRING : {
+				if( ( _string != "0" && _string != "" ) )
+					return true;
+			} break;
+
+
+			case PHP_ARRAY : {
+				if( this->count() > 0 )
+					return true;
+			}
+
+			default : {
+				if( _int != 0 )
+					return true;
+			}  break;
+
 		}
+
 
 	    return false;
 	}
@@ -208,9 +215,21 @@ public:
     
 	bool isset( var index ) {
 		for( int i = 0; i < keys.size(); i++ ) {
-			if( keys[i].string() == index.string() ) {
-				return true;
-			}
+
+     		if( _type == keys[i]._type ) {
+        		if( _type == PHP_STRING ) {
+        			if( _string == keys[i]._string )
+        				return true;
+        		} else {
+        			if( _int == keys[i]._int )
+        				return true;
+        		}
+        	}
+        	else {
+        		if(  index.string() == keys[i].string() )
+                	return true;
+            }
+
 		}
 
 		return false;			
@@ -328,8 +347,6 @@ public:
 	}	
 
 
-
-
 	var operator-( var a ) {
 		return _int - a._int;
 	}
@@ -443,10 +460,18 @@ public:
 	}	
 		     
 	bool operator==( var a ) {
-
-		if(  string() == a.string() ) {
-			return true;
+		if( _type == a._type ){
+			if( _type == PHP_STRING ){
+				if( _string == a._string ){
+					return true;
+				}
+			} else {
+				if( _int == a._int ){
+					return true;
+				}
+			}
 		}
+		
 		return false;
 	}	
 
@@ -461,6 +486,60 @@ public:
 		_type = PHP_ARRAY;
 	}
 
+	var &operator[]( const char * const &a ) {
+
+		_type = PHP_ARRAY;
+
+        int i = 0;
+        for(i = 0;i < keys.size(); ++i)
+        {
+        	if(  a == keys[i]._string )
+                return data[i];
+        }
+
+        var temp;
+	    keys.push_back( a );
+        data.push_back( temp );
+
+		return data[i];		
+	}
+
+	var &operator[]( const int &a ) {
+
+		_type = PHP_ARRAY;
+
+        int i = 0;
+        for(i = 0;i < keys.size(); ++i)
+        {
+        	if(  a == keys[i]._int )
+                return data[i];
+        }
+
+        var temp;
+	    keys.push_back( a );
+        data.push_back( temp );
+
+		return data[i];		
+	}
+
+	var &operator[]( const double &a ) {
+
+		_type = PHP_ARRAY;
+
+        int i = 0;
+        for(i = 0;i < keys.size(); ++i)
+        {
+        	if(  a == keys[i]._int )
+                return data[i];
+        }
+
+        var temp;
+	    keys.push_back( a );
+        data.push_back( temp );
+
+		return data[i];		
+	}
+
 	var &operator[]( var a ) {
 
 		_type = PHP_ARRAY;
@@ -468,8 +547,18 @@ public:
         int i = 0;
         for(i = 0;i < keys.size(); ++i)
         {
-        	if( a.string() == keys[i].string() ) {
-                return data[i];
+        	if( _type == keys[i]._type ) {
+        		if( _type == PHP_STRING ) {
+        			if( _string == keys[i]._string )
+        				return data[i];
+        		} else {
+        			if( _int == keys[i]._int )
+        				return data[i];
+        		}
+        	}
+        	else {
+        		if(  a.string() == keys[i].string() )
+                	return data[i];
             }
         }
 
