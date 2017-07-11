@@ -379,13 +379,16 @@ public:
 
         do_operator();
 
-        //continue intepreting
-        if( ( tokens[ offset ][0] == SEMICOLON  || tokens[ offset ][0] == END_PHP ) && offset != tokens.count() - 1  ) {
-
-            offset++;
-
-            start();
+        if( offset != tokens.count() - 1 ) {
+            switch( tokens[ offset ][0].to_int() ) {
+                case SEMICOLON:
+                case END_PHP:
+                    offset++;
+                    start();
+                break;                    
+            }
         }
+ 
 
     }
 
@@ -397,6 +400,54 @@ private:
     bool get_val( var &val ) {
 
         switch( tokens[offset][0].to_int() ) {
+            case START_PHP: {
+                offset++;
+                if( tokens[offset][0] == IDENTIFIER && (tokens[offset][1] == "php" || tokens[offset][1] == "4php" ) ) {
+                    offset++;
+                }
+
+                if( tokens[offset][0] == EQUAL ) {
+                    offset++;
+                    val = do_operator();
+                    echo( val );
+                }
+
+                start();  
+
+            } break;
+
+            
+            case VARIABLE: {
+                var var_name = tokens[offset++][1];
+
+                val = do_variable( variables[ var_name ], var_name );
+
+                for( auto x : super_global_variables ) {
+                    variables[x] = super_global_variables[x];
+                }
+
+                return true;
+            } break;
+
+            case STRING: case NUMBER: case TRUE: case FALSE : {
+                switch( tokens[offset][0].to_int() ) {
+                    case TRUE :
+                        val = true;
+                        offset++;
+                        break;
+                    case FALSE :
+                        val = false;
+                        offset++;                   
+                        break;
+                    default:
+                        val = tokens[offset++][1]; 
+                        break;
+
+                }
+           
+                return true;            
+            } break;
+
             
             case IDENTIFIER: {
                 if( functions.isset( tokens[offset][1] ) ) {
@@ -434,67 +485,26 @@ private:
                 return true;            
             } break;
 
-            case START_PHP: {
-                offset++;
-                if( tokens[offset][0] == IDENTIFIER && (tokens[offset][1] == "php" || tokens[offset][1] == "4php" ) ) {
-                    offset++;
-                }
-
-                if( tokens[offset][0] == EQUAL ) {
-                    offset++;
-                    val = do_operator();
-                    echo( val );
-                }
-
-                start();  
-
-            } break;
-
-            case END_PHP: {
-                offset++;
-                start();                
-            } break;
-
-            case STRING: case NUMBER: case TRUE: case FALSE : {
-                switch( tokens[offset][0].to_int() ) {
-                    case TRUE :
-                        val = true;
-                        offset++;
-                        break;
-                    case FALSE :
-                        val = false;
-                        offset++;                   
-                        break;
-                    default:
-                        val = tokens[offset++][1]; 
-                        break;
-
-                }
-           
-                return true;            
-            } break;
 
             case LEFT_BRACKET: {
                 val = do_array();
                 return true;
             } break;
             
-                
-            case VARIABLE: {
-                var var_name = tokens[offset++][1];
-
-                val = do_variable( variables[ var_name ], var_name );
-
-                for( auto x : super_global_variables ) {
-                    variables[x] = super_global_variables[x];
-                }
-
-                return true;
-            } break;
-
             case LEFT_PAREN: {
                 offset++;
                 val = do_paren();
+                return true;            
+            } break;
+
+            case LEFT_BRACE:{
+                val = do_array();
+                return true;            
+            } break;
+
+            case ARRAY:{
+                offset++;
+                val = do_array();
                 return true;            
             } break;
 
@@ -510,10 +520,6 @@ private:
                 return true;            
             } break;
 
-            case LEFT_BRACE:{
-                val = do_array();
-                return true;            
-            } break;
 
             case IF:{
                 offset++;
@@ -550,11 +556,7 @@ private:
                 return true;            
             } break;
             
-            case ARRAY:{
-                offset++;
-                val = do_array();
-                return true;            
-            } break;
+
             
             case FOR:{
                 offset++;
@@ -588,6 +590,12 @@ private:
                 return true;            
             } break;
 
+
+
+            case END_PHP: {
+                offset++;
+                start();                
+            } break;
 
         }
 
@@ -916,7 +924,7 @@ private:
     }
 
     var do_operator() {
-        
+
         var ret = do_second_operator();
        
         switch( (int)tokens[offset][0].to_num() ) {
@@ -952,25 +960,36 @@ private:
         int index = 0;
         var array;
         while( true ) {
-            if( tokens[offset][0] == RIGHT_BRACKET || tokens[offset][0] == RIGHT_PAREN || tokens[offset][0] == RIGHT_BRACE  ) {
-                offset++;
-                break;
+
+            switch( tokens[offset][0].to_int() ){
+                case RIGHT_BRACKET:
+                case RIGHT_PAREN :
+                case RIGHT_BRACE:
+                    offset++;
+                    goto exit_loop;
+                break;    
             }
 
             var gindex = do_operator();
 
-            if( tokens[offset][0] == EQ_ARR || tokens[offset][0] == COLON ) {
-                offset++;
-                array[gindex] = do_operator();
-            } else {
-                array[index++] = gindex;
+            switch( tokens[offset][0].to_int() ) {
+                case EQ_ARR:
+                case COLON:
+                    offset++;
+                    array[gindex] = do_operator();
+                break;
+                case COMMA :
+                    offset++;
+                    continue;
+                break;                    
+                default:
+                    array[index++] = gindex;   
             }
 
-            if( tokens[offset][0] == COMMA ) {
-                offset++;
-                continue;
-            }
+
         }
+
+        exit_loop:
 
         return array;
     }
@@ -1310,6 +1329,143 @@ var exten_define( var &p )  {
     return 0;
 }
 
+var exten_sum( var &p ) {
+    var out = 0;
+    for( auto x : p ) {
+        out += p[x];
+    }
+    return out;
+}
+
+
+var exten_echo( var &p ) {
+    echo( p[0] );
+    
+    return 0;
+}
+
+var exten_print_r( var &p ) {
+
+    if( p[1] == "true" ) {
+        std::string out;
+        print_r( p[0], out );
+        return out;
+    }
+    else 
+       print_r( p[0] );
+    
+    return 0;
+}
+
+var exten_is_array( var &p ) {
+
+    if( p[0].type() == "array" )
+       return true;
+   
+    return false;
+}
+
+var exten_type( var &p ) {
+    return p[0].type();
+}
+
+var exten_count( var &p ) {
+    if( p[0].type() == "array" ) {
+        return p[0].count();
+    }
+
+    return 0;
+}
+
+var exten_microtime( var &p ) {
+    struct timeval time;
+    gettimeofday(&time, NULL);
+    double microsec = (float)time.tv_usec / (float)1000000 ;//time.tv_sec ;
+
+    return microsec;
+}
+
+
+var exten_usleep( var &p ) {
+    long t = p[0].to_num();
+    std::cout.flush();
+
+    usleep( t );
+    return 0;
+}
+
+var exten_time( var &p ) {
+
+    return std::time(0);
+}
+
+var exten_round( var &p ) {
+
+    return round( p[0].to_num() );
+}
+
+var exten_exit( var &p )  {
+    exit(0);
+    return 0;
+}
+
+var exten_die( var &p )  {
+    echo( p[0] );
+    exit(0);
+    return 0;
+}
+
+var exten_implode( var &p )  {
+    var out = "";
+    var pre = "";
+    for( auto x : p[1] ) {
+        out += pre+p[1][x];
+        pre = p[0];
+    }
+
+    return out;
+}
+
+
+var exten_get_defined_functions( var &p )  {
+    var internal;
+    int i = 0;
+    for( auto x : functions ) {
+        internal[ i++ ] = x;
+
+    }
+
+    var out;
+    out["internal"] = internal; 
+
+    return out;
+}
+
+
+var exten_explode( var &p ) {
+    var out;
+    size_t pos = 0;
+    size_t start = 0;
+    std::string container = p[1].string();
+    std::string delim = p[0].string();
+
+    int i = 0;
+    while ( ( pos = container.find( delim, pos ) ) != std::string::npos ) {
+
+        out[ i++ ] = container.substr( start, ( pos - start ) );
+
+        pos += delim.length();
+
+        start = pos;
+
+    }   
+
+    out[ i ] = container.substr( start, container.length() );
+    return std::move( out );
+
+}
+
+
 int main( int argc, char** argv ) {
 
     if( argv[1] == NULL ) {
@@ -1325,7 +1481,7 @@ int main( int argc, char** argv ) {
     }
 
     functions["define"] = exten_define;
-   /* functions["sum"] = exten_sum;
+    functions["sum"] = exten_sum;
     functions["echo"] = exten_echo;
     functions["print"] = exten_echo;
     functions["print_r"] = exten_print_r;
@@ -1340,9 +1496,9 @@ int main( int argc, char** argv ) {
     functions["die"] = exten_die;
     functions["implode"] = exten_implode;
     functions["explode"] = exten_explode;
-    functions["get_defined_functions"] = exten_get_defined_functions;*/
+    functions["get_defined_functions"] = exten_get_defined_functions;
 
-    load_extension("standard");
+    //load_extension("standard");
     
 
     tokens = tokenize( source );

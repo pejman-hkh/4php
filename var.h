@@ -105,41 +105,39 @@ public:
 
     var(): _type(PHP_STRING), _string("") {}
 
-	var( std::function <var(var&)> a ) : _type( PHP_CLASS ), _string("Function"), methods( a ) {}
+	var( const std::function <var(var&)> &a ) : _type( PHP_CLASS ), _string("Function"), methods( a ) {}
 
-	var( std::function <var(var)> a ) :_type( PHP_CLASS ), _string("Function"), methods1(a) {}
+	var( const std::function <var(var)> &a ) :_type( PHP_CLASS ), _string("Function"), methods1(a) {}
 
-	var( func a ) : _type(PHP_FUNCTION), function(a), _string("Function") {}
+	var( const func &a ) : _type(PHP_FUNCTION), function(a), _string("Function") {}
 
-	var( func1 a ) : _type(PHP_FUNCTION), function1(a), _string("Function") {}
+	var( const func1 &a ) : _type(PHP_FUNCTION), function1(a), _string("Function") {}
 
-	var( int a ): _type(PHP_INT), _int( a ) {}
+	var( const int &a ): _type(PHP_INT), _int( a ) {}
 
-	var( long int a ): _type(PHP_INT), _int( a ) {}
+	var( const long int &a ): _type(PHP_INT), _int( a ) {}
 
-	var( unsigned int a ): _type(PHP_INT), _int( a ) {}
+	var( const unsigned int &a ): _type(PHP_INT), _int( a ) {}
 
-	var( long unsigned int a ): _type(PHP_INT), _int( a ) {}
+	var( const long unsigned int &a ): _type(PHP_INT), _int( a ) {}
 
-	var( float a ): _type(PHP_DOUBLE), _int( a ) {}
+	var( const float &a ): _type(PHP_DOUBLE), _int( a ) {}
 
-	var( double a ): _type(PHP_DOUBLE), _int( a ) {}
+	var( const double &a ): _type(PHP_DOUBLE), _int( a ) {}
 
-	var( long double a ): _type(PHP_DOUBLE), _int( a ) {}
+	var( const long double &a ): _type(PHP_DOUBLE), _int( a ) {}
 	
 
-	var( std::string a ): _type(PHP_STRING), _string( a ) {}
+	var( const std::string &a ): _type(PHP_STRING), _string( a ) {}
 
-	var( const char *a ) : _type(PHP_STRING), _string( a ) {}
+	var( const char * const &a ) : _type(PHP_STRING), _string( a ) {}
+
 
 	var( const unsigned char*a ) : _type(PHP_STRING), _string( to_string(a) ) {}
 
 	var( char *a ) : _type(PHP_STRING), _string( a )  {}
 
-    var( bool a ) : _type(PHP_INT) {
-    	_int = a ? 1 : 0;
-        
-    }
+    var( const bool &a ) : _type(PHP_INT), _int( a ? 1 : 0 ) {}
 
 	explicit operator bool() 
 	{
@@ -225,17 +223,31 @@ public:
 		return std::move( out );
 
     }
-    
+
+    var replace( var a )
+	{
+
+		for( int i = 0; i < a.size(); i++ ) {
+			
+			size_t pos = 0;
+    		while ( ( pos = string().find( a.key( i ).string(), pos ) ) != std::string::npos ) {
+				string().replace( pos, a.key( i ).string().length(), a.value( i ).string() );
+				pos += a.value( i ).string().length();
+			}	
+		}
+
+		return string();
+	}
+
 	bool isset( var index ) {
 		for( int i = 0; i < keys.size(); i++ ) {
 
-     		if( _type == keys[i]._type ) {
-        		if( _type == PHP_STRING ) {
-        			if( _string == keys[i]._string )
+     		if( index._type == keys[i]._type ) {
+        		if( index._type == PHP_STRING ) {
+        			if( index._string == keys[i]._string )
         				return true;
         		} else {
-        			if( _int == keys[i]._int )
-        				return true;
+        			return index._int == keys[i]._int;
         		}
         	}
         	else {
@@ -247,6 +259,7 @@ public:
 
 		return false;			
 	}
+    
 
 	var type() {
 		return _type;
@@ -282,20 +295,7 @@ public:
         return string().size();
     }
 
-	var replace( var a )
-	{
 
-		for( int i = 0; i < a.size(); i++ ) {
-			
-			size_t pos = 0;
-    		while ( ( pos = string().find( a.key( i ).string(), pos ) ) != std::string::npos ) {
-				string().replace( pos, a.key( i ).string().length(), a.value( i ).string() );
-				pos += a.value( i ).string().length();
-			}	
-		}
-
-		return string();
-	}
 
 	double to_num() {
 		return _int;
@@ -421,9 +421,7 @@ public:
     }
         
     var operator*(var a) {
-		_int = _int * a._int;
-
-		return _int;
+		return _int * a._int;
     }
 
 	var operator/(var a) {
@@ -432,73 +430,44 @@ public:
 		     
 	bool operator&&( var a ) {
 		
-		if(  _int && a._int ) {
-			return true;
-		}
-		return false;
+		
+		return _int && a._int;
 	}	
 
 	bool operator||( var a ) {
-		
-		if(  _int || a._int ) {
-			return true;
-		}
-		return false;
+		return _int || a._int;
 	}	
 
 
 	bool operator<( var a ) {
-		
-		if(  _int < a._int ) {
-			return true;
-		}
-		return false;
+	
+		return _int < a._int;
 	}
 				     
 	bool operator>( var a ) {
-		if(  _int > a._int ) {
-			return true;
-		}
-		return false;
+		return _int > a._int;
 	}
 		     
 	bool operator<=( var a ) {
-		if(  _int <= a._int ) {
-			return true;
-		}
-		return false;
+		return _int <= a._int;
 	}
 
 	bool operator>=( var a ) {
-		if(  _int >= a._int ) {
-			return true;
-		}
-		return false;
+		return _int >= a._int;
 	}	
 		     
 	bool operator==( const char * const &a ) {
-		
-		if( a == string() ){
-			return true;
-		}
-		
-		return false;
+		return a == string();
 	}
 
 	bool operator==( const std::string &a ) {
 		
-		if( a == string() ){
-			return true;
-		}
-		
-		return false;
+		return a == string();
 	}
 		     
 	bool operator==( int a ) {
 		if( _type != PHP_STRING ){
-			if( a == _int ){
-				return true;
-			}
+			return a == _int;
 		}
 		
 		return false;
@@ -507,13 +476,9 @@ public:
 	bool operator==( var a ) {
 		if( _type == a._type ){
 			if( _type == PHP_STRING ){
-				if( _string == a._string ){
-					return true;
-				}
+				return _string == a._string;
 			} else {
-				if( _int == a._int ){
-					return true;
-				}
+				return _int == a._int ;
 			}
 		}
 		
@@ -521,10 +486,7 @@ public:
 	}	
 
 	bool operator!=( var a ) {
-		if(  _int != a._int ) {
-			return true;
-		}
-		return false;
+		return _int != a._int;
 	}
 
 	var &operator[]( const std::string &a ) {
@@ -697,7 +659,8 @@ void print_r( var a, std::string &ret_str, std::string tab = "" ) {
     }
 }
 
-void print_r( var a ) {
+
+void print_r( const var &a ) {
 	std::string out;
 	print_r( a, out );
 	std::cout << out;
