@@ -38,6 +38,20 @@ std::string to_string(T const& value) {
     return sstr.str();
 }
 
+
+std::string int_to_string( const int &a ) {
+	char ret[11];
+	i32toa_sse2( a, ret );
+	return ret;  
+}
+
+std::string double_to_string( const double &a ) {
+	char ret[11];
+	dtoa_milo( a, ret );
+	return ret;
+}
+
+
 template <typename T>
 T to_number( const std::string& str ) {
     std::istringstream ss(str);
@@ -74,7 +88,6 @@ public:
     std::function <var(var)> methods1;
 	friend void echo( var a );
 	friend bool empty( var a );
-
 
     std::string string() {
     	if( _type == PHP_DOUBLE ){
@@ -288,6 +301,10 @@ public:
 		return _int;
 	}
 
+	int to_int() {
+		return (int)_int;
+	}
+
     int size() {
        return count();
     }
@@ -459,6 +476,34 @@ public:
 		return false;
 	}	
 		     
+	bool operator==( const char * const &a ) {
+		
+		if( a == string() ){
+			return true;
+		}
+		
+		return false;
+	}
+
+	bool operator==( const std::string &a ) {
+		
+		if( a == string() ){
+			return true;
+		}
+		
+		return false;
+	}
+		     
+	bool operator==( int a ) {
+		if( _type != PHP_STRING ){
+			if( a == _int ){
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
 	bool operator==( var a ) {
 		if( _type == a._type ){
 			if( _type == PHP_STRING ){
@@ -482,8 +527,22 @@ public:
 		return false;
 	}
 
-	void array() {
+	var &operator[]( const std::string &a ) {
+
 		_type = PHP_ARRAY;
+
+        int i = 0;
+        for(i = 0;i < keys.size(); ++i)
+        {
+        	if(  a == keys[i].string() )
+                return data[i];
+        }
+
+        var temp;
+	    keys.push_back( a );
+        data.push_back( temp );
+
+		return data[i];		
 	}
 
 	var &operator[]( const char * const &a ) {
@@ -493,7 +552,7 @@ public:
         int i = 0;
         for(i = 0;i < keys.size(); ++i)
         {
-        	if(  a == keys[i]._string )
+        	if(  a == keys[i].string() )
                 return data[i];
         }
 
@@ -508,11 +567,18 @@ public:
 
 		_type = PHP_ARRAY;
 
+	
         int i = 0;
         for(i = 0;i < keys.size(); ++i)
         {
-        	if(  a == keys[i]._int )
-                return data[i];
+        	if( keys[i]._type == PHP_STRING ){
+        		if(  int_to_string( a ) == keys[i].string() )
+                	return data[i];	
+        	} else {
+	         	if(  a == keys[i]._int )
+	                return data[i];       		
+        	}
+
         }
 
         var temp;
@@ -529,8 +595,13 @@ public:
         int i = 0;
         for(i = 0;i < keys.size(); ++i)
         {
-        	if(  a == keys[i]._int )
-                return data[i];
+        	if( keys[i]._type == PHP_STRING ){
+        		if(  double_to_string( a ) == keys[i].string() )
+                	return data[i];	
+        	} else {
+	         	if(  a == keys[i]._int )
+	                return data[i];       		
+        	}
         }
 
         var temp;

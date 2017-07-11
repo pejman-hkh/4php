@@ -396,7 +396,7 @@ private:
 
     bool get_val( var &val ) {
 
-        switch( (int)tokens[offset][0].to_num() ) {
+        switch( tokens[offset][0].to_int() ) {
             
             case IDENTIFIER: {
                 if( functions.isset( tokens[offset][1] ) ) {
@@ -456,7 +456,7 @@ private:
             } break;
 
             case STRING: case NUMBER: case TRUE: case FALSE : {
-                switch( (int)tokens[offset][0].to_num() ) {
+                switch( tokens[offset][0].to_int() ) {
                     case TRUE :
                         val = true;
                         offset++;
@@ -693,7 +693,7 @@ private:
         if( tokens[ offset ][0] == STAR || tokens[ offset ][0] == PLUS || tokens[ offset ][0] == DOT || tokens[ offset ][0] == SLASH || tokens[ offset ][0] == DASH  ) {
 
             if( tokens[ offset + 1 ][0] == EQUAL ) {
-                int operator_k = (int)tokens[ offset ][0].to_num();
+                int operator_k = tokens[ offset ][0].to_int();
                 offset++;
 
                 offset++;
@@ -848,7 +848,7 @@ private:
             return ret;
         }
 
-        switch( (int)tokens[offset][0].to_num() ) {
+        switch( tokens[offset][0].to_int() ) {
             case EQ_OP :
                 offset++;
                 ret = ret == do_first_operator();
@@ -1286,7 +1286,7 @@ private:
     }
 
     int offset = 0;
-    var tokens;
+    var &tokens;
     var variables;
     var temp_variables;
     var return_val;
