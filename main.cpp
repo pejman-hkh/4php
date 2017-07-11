@@ -16,7 +16,6 @@ var keywords = var({
     {"function", FUNCTION}, {"global", GLOBAL}, { "new", NEW }, { "true", TRUE }, { "false", FALSE }, { "array", ARRAY }, { "as", AS }, { "foreach", FOREACH }
 }).to_kv();
 
-var toks = {"NUMBER", "IDENTIFIER", "STRING", "LEFT_PAREN", "RIGHT_PAREN", "LEFT_BRACKET", "RIGHT_BRACKET", "LEFT_BRACE", "RIGHT_BRACE", "PLUS", "DASH", "STAR", "PERCENT", "SLASH", "NOT", "COMMA", "SEMICOLON", "DOT", "COLON", "EQUAL", "EQ_OP", "NOT_EQUAL", "GREATER", "GREATER_EQUAL", "LESS", "LESS_EQUAL", "LOGICAL_AND", "LOGICAL_OR", "IF", "ELSE", "WHILE", "FOR", "RETURN", "BREAK", "CONTINUE", "FUNCTION", "GLOBAL", "LOCAL", "EQ_ARR", "TRUE", "FALSE", "ARRAY", "VARIABLE", "AS", "FOREACH", "START", "PLUS_PLUS", "START_PHP", "END_PHP", "QUESTION", "ELSEIF", "SHEBANG"};
 
 std::string file_get_contents( std::string file_name ) {
     std::string content;
@@ -82,6 +81,7 @@ var tokenize( std::string &source, bool eval = false )
     bool plz_tokenize = false;
     int it = 0;
     std::string strings;
+    
     while( true )
     {
 
@@ -132,6 +132,7 @@ var tokenize( std::string &source, bool eval = false )
 
         passes = "";
         int start = i;
+        
         switch(source[i])
         {
             case ' ': case '\t': case '\n':
@@ -248,9 +249,33 @@ var tokenize( std::string &source, bool eval = false )
             case '"':
                 ++i;
 
-                while(!(source[i] == '"' && source[i-1] != '\\')) passes += source[i++];
+                while(!(source[i] == '"' && source[i-1] != '\\')) {
+    
+                    if(source[i] == '\\') {
+
+                       switch(source[++i]) {
+                            case 'a': passes += '\a'; break;
+                            case 'b': passes += '\b'; break;
+                            case 'f': passes += '\f'; break;
+                            case 'n': passes += '\n'; break;
+                            case 'r': passes += '\r'; break;
+                            case 't': passes += '\t'; break;
+                            case 'v': passes += '\v'; break;
+                            case '\'': passes += '\''; break;
+                            case '\"': passes += '\"'; break;
+                            default:
+                                passes += '\\';
+                                passes += source[i];
+                        }
+                        i++;
+                    } else {
+                        passes += source[i++];  
+                    } 
+                }  
+                    
+                
                 ++i;
-                tokens[it++] = {STRING, var(passes).replace( var( { { "\\n", "\n" }, { "\\\"", "\"" }, { "\\r", "\r"}, { "\\t", "\t" }  } ).to_kv() ) };
+                tokens[it++] = {STRING, passes };
 
                 break;            
             case '\'':
@@ -261,8 +286,11 @@ var tokenize( std::string &source, bool eval = false )
                 break;
             default:
                 if(std::isdigit(source[i])) {
+                    bool is_int = true;
                     while(std::isdigit(source[i])) passes += source[i++];
                     if(source[i]=='.') {
+                        std::cout << "here";
+                        is_int = false;
                         passes += ".";
                         ++i;
                         while(std::isdigit(source[i])) passes += source[i++];
@@ -272,6 +300,7 @@ var tokenize( std::string &source, bool eval = false )
                         if(source[i]=='-') ++i;
                         while(std::isdigit(source[i])) passes += source[i++];
                     }*/
+
 
                     if( i+1 != end && source[i] == 'p') {
                         i++;
@@ -283,7 +312,16 @@ var tokenize( std::string &source, bool eval = false )
                             }                            
                         }
                     } else {
-                        tokens[it++] = {NUMBER, to_number<double>(passes)};   
+
+                        var val;
+                        if( is_int ) {
+                            val = to_number<int>(passes);
+                        } else {
+                            val = to_number<double>(passes);
+                        }
+
+                        
+                        tokens[it++] = {NUMBER, val};   
                     }
 
                     
@@ -358,158 +396,199 @@ private:
 
     bool get_val( var &val ) {
 
-        if( tokens[offset][0] == IDENTIFIER ) {
-
-            if( tokens[offset][1] == "eval") {
-                val = do_eval();
-                return true;
-            } else if( tokens[offset][1] == "include") {
-                val = do_eval();
-                return true;
-            } else if( functions.isset( tokens[offset][1] ) ) {
-                val = do_function();
-                return true;
-            } else if( local_functions.isset( tokens[offset][1] ) ) {
-                do_function( true );
-                val = return_val;
-                return true;
-            } else {
-                //find function and execute it
-                int temp_offset = offset;
-                find_function();
-                offset = temp_offset;
-
-                if( local_functions.isset( tokens[offset][1] ) && tokens[offset+1][0] == LEFT_PAREN ) {
+        switch( (int)tokens[offset][0].to_num() ) {
+            
+            case IDENTIFIER: {
+                if( functions.isset( tokens[offset][1] ) ) {
+                    val = do_function();
+                    return true;
+                } else if( local_functions.isset( tokens[offset][1] ) ) {
                     do_function( true );
-                    val = return_val;                     
+                    val = return_val;
+                    return true;
+                } else if( tokens[offset][1] == "eval" || tokens[offset][1] == "include" ) {
+                    val = do_eval();
+                    return true;
+                   
                 } else {
+                    //find function and execute it
+                    int temp_offset = offset;
+                    find_function();
+                    offset = temp_offset;
 
-                    val = constants[ tokens[offset++][1] ];  
-                }                
-   
-                return true;
-            }
-        } else if( tokens[offset][0] == SHEBANG ) {
+                    if( local_functions.isset( tokens[offset][1] ) && tokens[offset+1] == LEFT_PAREN ) {
+                        do_function( true );
+                        val = return_val;                     
+                    } else {
+
+                        val = constants[ tokens[offset++][1] ];  
+                    }                
+       
+                    return true;
+                }           
+            } break;
+
+            case SHEBANG: {
                 offset++;
                 start();
-                return true; 
-        } else if( tokens[offset][0] == START_PHP ) {
-            offset++;
-            if( tokens[offset][0] == IDENTIFIER && tokens[offset][1].in_array({ "php", "4php" } ) ) {
-                offset++;
-            }
+                return true;            
+            } break;
 
-            if( tokens[offset][0] == EQUAL ) {
+            case START_PHP: {
                 offset++;
+                if( tokens[offset][0] == IDENTIFIER && (tokens[offset][1] == "php" || tokens[offset][1] == "4php" ) ) {
+                    offset++;
+                }
+
+                if( tokens[offset][0] == EQUAL ) {
+                    offset++;
+                    val = do_operator();
+                    echo( val );
+                }
+
+                start();  
+
+            } break;
+
+            case END_PHP: {
+                offset++;
+                start();                
+            } break;
+
+            case STRING: case NUMBER: case TRUE: case FALSE : {
+                switch( (int)tokens[offset][0].to_num() ) {
+                    case TRUE :
+                        val = true;
+                        offset++;
+                        break;
+                    case FALSE :
+                        val = false;
+                        offset++;                   
+                        break;
+                    default:
+                        val = tokens[offset++][1]; 
+                        break;
+
+                }
+           
+                return true;            
+            } break;
+
+            case LEFT_BRACKET: {
+                val = do_array();
+                return true;
+            } break;
+            
+                
+            case VARIABLE: {
+                var var_name = tokens[offset++][1];
+
+                val = do_variable( variables[ var_name ], var_name );
+
+                for( auto x : super_global_variables ) {
+                    variables[x] = super_global_variables[x];
+                }
+
+                return true;
+            } break;
+
+            case LEFT_PAREN: {
+                offset++;
+                val = do_paren();
+                return true;            
+            } break;
+
+            case FOREACH: {
+                offset++;
+                do_foreach();
+                return true;            
+            } break;
+
+            case FUNCTION: {
+                offset++;
+                make_function();
+                return true;            
+            } break;
+
+            case LEFT_BRACE:{
+                val = do_array();
+                return true;            
+            } break;
+
+            case IF:{
+                offset++;
+                do_statement();
+                return true;            
+            } break;
+
+            case ELSE:{
+                offset++;
+
+                if( tokens[offset++][0] == IF ) {
+                    offset++;
+                    find_end_paren();
+                } 
+                offset++;
+                find_end_block();
+                start();
+                return true;            
+            } break;
+
+            case RETURN:{
+                int temp_offset = offset++;
                 val = do_operator();
-                echo( val );
-            }
 
-            start();  
+                return_val = val;
+                offset = temp_offset;
+
+                return true;            
+            } break;
             
-        }  else if( tokens[offset][0] == END_PHP ) {
-            offset++;
-            start();            
-        } else if( tokens[offset][0].in_array( { STRING, NUMBER, TRUE, FALSE } ) ) {
-            if( tokens[offset][0] == TRUE ) {
-                val = true;
+            case WHILE:{
                 offset++;
-            } else if( tokens[offset][0] == FALSE ) {
-                val = false;
-                offset++;  
-            } else {
-                val = tokens[offset++][1]; 
-            }
+                do_while();
+                return true;            
+            } break;
             
-            return true;
-        } else if( tokens[ offset ][0] == LEFT_BRACKET ) {
-            val = do_array();
-            return true;
-        } else if( tokens[offset][0] == VARIABLE ) {
-
-            var var_name = tokens[ offset++ ][1];
-
-            val = do_variable( variables[ var_name ], var_name );
-
-            for( auto x : super_global_variables ) {
-                variables[x] = super_global_variables[x];
-            }
-
-            return true;
-        } else if( tokens[offset][0] == LEFT_PAREN ) {
-            offset++;
-            val = do_paren();
-            return true;
-        } else if( tokens[offset][0] == FOREACH ) {
-            offset++;
-            do_foreach();
-            return true;
-        } else if( tokens[offset][0] == FUNCTION ) {
-
-            offset++;
-            make_function();
-            return true;
-        } else if( tokens[ offset ][0] == LEFT_BRACE ) {          
-            val = do_array();
-            return true;
-
-        } else if( tokens[offset][0] == IF ) {
-
-            offset++;
-            do_statement();
-            return true;
-        } else if( tokens[offset][0] == ELSE ) {
-            offset++;
-
-            if( tokens[offset++][0] == IF ) {
+            case ARRAY:{
                 offset++;
-                find_end_paren();
-            } 
-            offset++;
-            find_end_block();
-            start();
-            return true;
-        } else if( tokens[offset][0] == RETURN ) {
-            int temp_offset = offset++;
-            val = do_operator();
+                val = do_array();
+                return true;            
+            } break;
+            
+            case FOR:{
+                offset++;
 
-            return_val = val;
-            offset = temp_offset;
+                offset++;   
+                do_operator();
 
-            return true;
-        } else if( tokens[offset][0] == WHILE ) {
-            offset++;
-            do_while();
-            return true;
+                offset++;
 
-        } else if( tokens[offset][0] == ARRAY ) {
-            offset++;
-            val = do_array();
-            return true;
-        } else if( tokens[offset][0] == FOR ) {
-            offset++;
+                do_for();
+                return true;            
+            } break;
+            
+            case GLOBAL:{
+                offset++;
 
-            offset++;   
-            do_operator();
+                variables[ tokens[offset][1] ] = temp_variables[ tokens[offset][1] ];
+                offset++;
+                return true;            
+            } break;
 
-            offset++;
+            case PLUS_PLUS:{
+                offset++;
+                return true;            
+            } break;
 
-            do_for();
-            return true;
-        } else if( tokens[offset][0] == GLOBAL ) {
-            offset++;
+            case NEW:{
+                offset++;
+                val = make_class();
 
-            variables[ tokens[offset][1] ] = temp_variables[ tokens[offset][1] ];
-            offset++;
-            return true;
-        } else if ( tokens[offset][0] == PLUS_PLUS ) {
-            offset++;
-            return true;
-        } else if( tokens[offset][0] == NEW ) {
+                return true;            
+            } break;
 
-            offset++;
-            val = make_class();
-            return true;
+
         }
 
         return false;
@@ -597,9 +676,6 @@ private:
 
         }
 
-        if( index == "" ) {
-            index = vars.count();
-        }
 
         if( tokens[offset][0] == PLUS_PLUS ) {
             offset++;
@@ -610,16 +686,19 @@ private:
         }
 
 
-        if( tokens[ offset ][0].in_array({ STAR, PLUS, DOT, SLASH, DASH }) ) {
+        if( index == "" ) {
+            index = vars.count();
+        }
+
+        if( tokens[ offset ][0] == STAR || tokens[ offset ][0] == PLUS || tokens[ offset ][0] == DOT || tokens[ offset ][0] == SLASH || tokens[ offset ][0] == DASH  ) {
 
             if( tokens[ offset + 1 ][0] == EQUAL ) {
-                int operator_k = tokens[ offset ][0].to_int();
+                int operator_k = (int)tokens[ offset ][0].to_num();
                 offset++;
 
                 offset++;
                 var_val = do_operator();
                 
-
                 switch( operator_k ) {
                     case STAR :
                         if( index_t )
@@ -660,9 +739,7 @@ private:
                 }
 
             }
-        }
-
-        if( tokens[offset][0] == EQUAL ) {
+        } else if( tokens[offset][0] == EQUAL ) {
             offset++;
 
             var_val = do_operator();
@@ -765,28 +842,37 @@ private:
     }
 
     var do_first_operator() {
-   
         var ret;
         if( ! get_val( ret ) ) {
 
             return ret;
         }
- 
-        if( tokens[offset][0] == EQ_OP ) {
-            offset++;
-            ret = ret == do_first_operator();
-        } else if( tokens[offset][0] == LESS_EQUAL ) {
-            offset++;
-            ret = ret <= do_first_operator();
-        } else if( tokens[offset][0] == LESS ) {
-            offset++;
-            ret = ret < do_first_operator();
-        } else if( tokens[offset][0] == GREATER ) {
-            offset++;
-            ret = ret > do_first_operator();
-        } else if( tokens[offset][0] == GREATER_EQUAL ) {
-            offset++;
-            ret = ret >= do_first_operator();
+
+        switch( (int)tokens[offset][0].to_num() ) {
+            case EQ_OP :
+                offset++;
+                ret = ret == do_first_operator();
+            break;
+
+            case LESS_EQUAL : 
+                offset++;
+                ret = ret <= do_first_operator();
+            break;
+
+            case LESS :
+                offset++;
+                ret = ret < do_first_operator();
+            break;    
+            case GREATER :     
+                offset++;
+                ret = ret > do_first_operator();
+            break;
+
+            case GREATER_EQUAL :     
+                offset++;
+                ret = ret >= do_first_operator();
+            break;
+
         }
 
         return ret;
@@ -796,41 +882,55 @@ private:
 
         var ret = do_first_operator();
 
-        if( tokens[offset][0] == PERCENT ) {
-            offset++;
-            ret %= do_second_operator();
-        } else if( tokens[offset][0] == STAR ) {
-            offset++;
-            ret *= do_second_operator();
-        } else if( tokens[offset][0] == SLASH ) {
-            offset++;
-            ret /= do_second_operator();
-        } else if( tokens[offset][0] == LOGICAL_AND ) {
-            offset++;
-            ret = ret && do_second_operator();
-        }
+        switch( (int)tokens[offset][0].to_num() ) {
+            case PERCENT :
+                offset++;
+                ret %= do_second_operator();
+            break;
 
+            case STAR : 
+                offset++;
+                ret *= do_second_operator();
+            break;
+
+            case SLASH :
+                offset++;
+                ret /= do_second_operator();
+            break;    
+            case LOGICAL_AND :     
+                offset++;
+                ret = ret && do_second_operator();
+            break;
+
+        }
 
         return ret;
     }
 
     var do_operator() {
-
+        
         var ret = do_second_operator();
+       
+        switch( (int)tokens[offset][0].to_num() ) {
+            case DOT :
+                offset++;
+                ret = ret.concat( do_operator() );
+            break;
 
-    
-        if( tokens[ offset ][0] == DOT ) {
-            offset++;
-            ret = ret.concat( do_operator() );
-        } else if( tokens[ offset ][0] == PLUS ) {
-            offset++;
-            ret += do_operator();
-        } else if( tokens[ offset ][0] == DASH  ) {
-            offset++;
-            ret -= do_operator();
-        } else if( tokens[ offset ][0] == LOGICAL_OR ) {
-            offset++;
-            ret = ret || do_operator();
+            case PLUS : 
+                offset++;
+                ret += do_operator();
+            break;
+
+            case DASH :
+                offset++;
+                ret -= do_operator();
+            break;    
+            case LOGICAL_OR :     
+                offset++;
+                ret = ret || do_operator();
+            break;
+
         }
 
         return ret;
@@ -899,7 +999,7 @@ private:
             var ff = local_functions[ func_name ];
 
             int temp_offset = offset;
-            offset = ff[0].to_int()+1;
+            offset = ff[0].to_num()+1;
             var &params = ff[2];
             var &params_val = ff[3];
 
@@ -1091,7 +1191,7 @@ private:
     void make_function( bool plz_start = true ) {
         var func_name = tokens[offset++][1];
         if( local_functions.isset( func_name ) ) {
-            offset = local_functions[ func_name ][1].to_int();
+            offset = local_functions[ func_name ][1].to_num();
         } else {
             offset++;
             var params;
@@ -1150,7 +1250,7 @@ private:
         }
         offset++;
 
-        if( array.type() != "array" ) {
+        if( array.type() != PHP_ARRAY ) {
             offset++;
             find_end_block();
 
@@ -1219,11 +1319,12 @@ int main( int argc, char** argv ) {
 
     functions["define"] = exten_define;
 
+
     load_extension("standard");
     
+
     tokens = tokenize( source );
 
- 
     interpreter i( tokens );
     i.start();
 

@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -8,7 +9,22 @@
 #include <sys/time.h>
 #include <functional>
 #include <memory>
+#include "dtoa_milo.h"
+#include "itoa_milo.h"
 
+
+double microtime() {
+    struct timeval time;
+    gettimeofday(&time, NULL);
+    double microsec = (float)time.tv_usec / (float)1000000 ;//time.tv_sec ;
+
+    return microsec;
+}
+
+
+enum PHP_TYPE {
+    PHP_STRING, PHP_INT, PHP_ARRAY, PHP_FUNCTION, PHP_CLASS, PHP_BOOL, PHP_DOUBLE
+};
 
 
 void exit() {
@@ -58,13 +74,94 @@ public:
     std::function <var(var)> methods1;
 	friend void echo( var a );
 	friend bool empty( var a );
+
+
+    std::string string() {
+    	if( _type == PHP_DOUBLE ){
+    		char ret[11];
+    		dtoa_milo( _int, ret );
+    		return ret;
+    	} else if( _type == PHP_INT ) {
+    		char ret[11];
+    		i32toa_sse2( _int, ret );
+    		return ret;    		
+    	}
+		else
+    		return _string;  
+    }
+
+    var(): _type(PHP_STRING), _string("") {}
+
+	var( std::function <var(var&)> a ) : _type( PHP_CLASS ), _string("Function"), methods( a ) {}
+
+	var( std::function <var(var)> a ) :_type( PHP_CLASS ), _string("Function"), methods1(a) {}
+
+	var( func a ) : _type(PHP_FUNCTION), function(a), _string("Function") {}
+
+	var( func1 a ) : _type(PHP_FUNCTION), function1(a), _string("Function") {}
+
+	var( int a ): _type(PHP_INT), _int( a ) {}
+
+	var( long int a ): _type(PHP_INT), _int( a ) {}
+
+	var( unsigned int a ): _type(PHP_INT), _int( a ) {}
+
+	var( long unsigned int a ): _type(PHP_INT), _int( a ) {}
+
+	var( float a ): _type(PHP_DOUBLE), _int( a ) {}
+
+	var( double a ): _type(PHP_DOUBLE), _int( a ) {}
+
+	var( long double a ): _type(PHP_DOUBLE), _int( a ) {}
+	
+
+	var( std::string a ): _type(PHP_STRING), _string( a ) {}
+
+	var( const char *a ) : _type(PHP_STRING), _string( a ) {}
+
+	var( const unsigned char*a ) : _type(PHP_STRING), _string( to_string(a) ) {}
+
+	var( char *a ) : _type(PHP_STRING), _string( a )  {}
+
+    var( bool a ) : _type(PHP_INT) {
+        if( a )
+            _int = 1;
+        else
+            _int = 0;
+        
+    }
+
+	explicit operator bool() 
+	{
+		if( _type == PHP_STRING ) {
+			if( ( _string != "0" && _string != "" ) )
+				return true;
+		} else if( _type == PHP_INT ) {
+			if( _int != 0 )
+				return true;
+		} else if( _type == PHP_ARRAY ) {
+			if( this->count() > 0 )
+				return true;
+		}
+
+	    return false;
+	}
+
+    var key( var i ) {
+        return keys[atol(i.string().c_str())];
+    }
+            
+    var value( var i ) {
+        return data[atol(i.string().c_str())];
+    }
+
 	void unset( var index = "" ) {
 		if( index == "") {
 			keys.clear();
 			data.clear();
 		} else {
 			for( int i = 0; i < keys.size(); i++ ) {
-				if( keys[i].container == index.container ) {
+				if( keys[i].string() == index.string() ) {
 					keys.erase( keys.begin() + i );
 					data.erase( data.begin() + i );
 				}
@@ -88,35 +185,15 @@ public:
 		return methods1;
 	}
 
-	var &sort() {
-
-		var temp_k;
-		var temp_v;
-			
-		for( int i = 0; i < keys.size(); i++ ) {
-			for( int j = 0; j < keys.size(); j++ ) {
-				if( to_number<int>( keys[i].container ) < to_number<int>( keys[j].container ) ) {
-					temp_k = keys[i];
-					temp_v = data[i];
-					data[i] = data[j];
-					keys[i] = keys[j];
-					data[j] = temp_v;
-					keys[j] = temp_k;
-				}
-			}
-		}
-		
-		return *this;
-	}
 
     var explode( std::string delim ) {
 	    var out;
 		size_t pos = 0;
 		size_t start = 0;
 		int i = 0;
-		while ( ( pos = container.find( delim, pos ) ) != std::string::npos ) {
+		while ( ( pos = string().find( delim, pos ) ) != std::string::npos ) {
 
-			out[ i++ ] = container.substr( start, ( pos - start ) );
+			out[ i++ ] = string().substr( start, ( pos - start ) );
 
 			pos += delim.length();
 
@@ -124,14 +201,14 @@ public:
 
 		}	
 	
-		out[ i ] = container.substr( start, container.length() );
+		out[ i ] = string().substr( start, string().length() );
 		return std::move( out );
 
     }
     
 	bool isset( var index ) {
 		for( int i = 0; i < keys.size(); i++ ) {
-			if( keys[i].container == index.container ) {
+			if( keys[i].string() == index.string() ) {
 				return true;
 			}
 		}
@@ -151,21 +228,9 @@ public:
     	return &keys[ keys.size() ];
     }
 
-    var key( var i ) {
-        return keys[atol(i.container.c_str())];
-    }
-            
-    var value( var i ) {
-        return data[atol(i.container.c_str())];
-    }
-
-    std::string string() {
-    	return container;
-    }
-
     var in_array( var arr ) {
    		for( auto x : arr ) {
-   			if( container == arr[x].container ) {
+   			if( string() == arr[x].string() ) {
    				return true;
    			}
 
@@ -174,7 +239,7 @@ public:
     }
 
     int count() {
-        if( _type == "array" ) {
+        if( _type == PHP_ARRAY ) {
             return keys.size();
         } else {
             return 0;
@@ -182,7 +247,7 @@ public:
     }
 
     int length() {
-        return container.size();
+        return string().size();
     }
 
 	var replace( var a )
@@ -191,127 +256,36 @@ public:
 		for( int i = 0; i < a.size(); i++ ) {
 			
 			size_t pos = 0;
-    		while ( ( pos = container.find( a.key( i ).container, pos ) ) != std::string::npos ) {
-				container.replace( pos, a.key( i ).container.length(), a.value( i ).container );
-				pos += a.value( i ).container.length();
+    		while ( ( pos = string().find( a.key( i ).string(), pos ) ) != std::string::npos ) {
+				string().replace( pos, a.key( i ).string().length(), a.value( i ).string() );
+				pos += a.value( i ).string().length();
 			}	
 		}
 
-		return container;
+		return string();
 	}
-
-	int to_int() {
-		return to_number<int>( container );
-	}	
 
 	double to_num() {
-		return to_number<double>( container );
-	}
-
-	long to_long() {
-		return to_number<long>( container );
+		return _int;
 	}
 
     int size() {
        return count();
     }
 
-    var() : _pos(0) {
-    	_type = "string";
-        container = "";
-    }
-
-	var( std::function <var(var&)> a ) {
-		_type = "class";
-		methods = a;
-		container = "Function";
-	}
-
-	var( std::function <var(var)> a ) {
-		_type = "class";
-		methods1 = a;
-		container = "Function";
-	}
-
-	var( func a ) {
-		_type = "function";
-		function = a;
-		container = "Function";
-	}
-
-	var( func1 a ) {
-		_type = "function";
-		function1 = a;
-		container = "Function";
-	}
-
-	var( int a ) {
-		_type = "int";
-		container = to_string( a );
-	}
-
-	var( long int a ) {
-		_type = "int";
-		container = to_string( a );
-	}
-
-	var( unsigned int a ) {
-		_type = "int";
-		container = to_string( a );
-	}
-
-	var( long unsigned int a ) {
-		_type = "int";
-		container = to_string( a );
-	}
-
-	var( std::string a ) {
-		_type = "string";
-		container = a;
-	}
-
-	var( const char *a ) {
-       	_type = "string";
-		container = to_string( a );
-	}
-
-	var( const unsigned char*a ) {
-       	_type = "string";
-		container = to_string( a );
-	}
-
-	var( char *a ) {
-		_type = "string";
-		container = to_string( a );
-	}
-
-	var( float a ) {
-		_type = "float";
-		container = to_string( a );
-	}
-
-	var( double a ) {
-		_type = "double";
-		container = to_string( a );
-	}
-
-	var( long double a ) {
-		_type = "double";
-		container = to_string( a );
-	}
 
 	var to_kv() {
 		var out;
 		for( int i = 0; i < keys.size(); ++i ) {
 			var value = data[i];
 
-			if( value[0]._type == "array" ) {
+			if( value[0]._type == PHP_ARRAY ) {
 				for( auto x : value ) {
 					out[ i ][ value[x][0] ] = value[x][1];
 				}
 			} else {
 				var val = data[i];
-				if( val._type == "array" ) {
+				if( val._type == PHP_ARRAY ) {
 					out[ val[0] ] = val[1];
 				} else {
 					out[i] = val;
@@ -323,7 +297,7 @@ public:
 	}
 
 	var( std::initializer_list<var> a ) {
-		_type = "array";
+		_type = PHP_ARRAY;
 
 		int i = 0;
 		for (auto n : a ) {
@@ -335,67 +309,43 @@ public:
 	}
 
 	var concat( var a ) {
-        var out;
-        out = container + a.container;
-     	
-        container =  out.string();
 
-		return out;
+        _string =  string() + a.string();
+
+		return _string;
 	}
 
 
 	var operator+( var a ) {
    		var out;
-   		if( _type == "string" && a._type == "string" ) {
-        	out = container + a.container;
+   		if( _type == PHP_STRING || a._type == PHP_STRING ) {
+        	out = string() + a.string();
         } else {
-       		out = to_number<double>( container ) + to_number<double>( a.container );
+       		out = _int + a._int;
        	}
-       		
-        container =  out.string();
 
 		return out;
 	}	
 
-    var( bool a ) {
-    	_type = "bool";
-        if( a )
-            container = "1";
-        else
-            container = "0";
-        
-    }
 
-	explicit operator bool() 
-	{
-
-		if( ( container != "0" && container != "" ) || ( this->count() > 0 ) ) {
-			return true;
-		}
-
-	    return false;
-	}
 
 
 	var operator-( var a ) {
-
-		var out = to_number<double>( container ) - to_number<double>( a.container );
-		container = out.string();
-		return out;
-
+		return _int - a._int;
 	}
 
 	var operator+=( var a ) {
         var out;
 
-        if( _type == "string" && a._type == "string" ) {
+        if( _type == PHP_STRING || a._type == PHP_STRING ) {
 
-        	out = container + a.container;
+        	_string = string() + a.string();
+
+        	out = _string;
         } else {
-        	out = to_number<double>( container ) + to_number<double>( a.container );
+        	_int = _int + a._int;
+        	out = _int;
         }
-        
-        container =  out.string();
 
 		return out;
 
@@ -403,56 +353,52 @@ public:
 
 	var operator-=( var a ) {
 
-		var out = to_number<double>( container ) - to_number<double>( a.container );
-		container = out.string();
-		return out;
+		_int = _int - a._int;
+
+		return _int;
 
 	}
 
 	var operator*=( var a ) {
-		var out = to_number<double>( container ) * to_number<double>( a.container );
-		container = out.string();
-		return out;
+
+		_int = _int * a._int;
+
+		return _int;
 
 	}
 
 	var operator/=( var a ) {
-		var out = to_number<double>( container ) / to_number<double>( a.container );
-		container = out.string();
-		return out;
+	
+		_int = _int / a._int;
+
+		return _int;
 	}
 
 	var operator%=( var a ) {
-		var out = to_number<int>( container ) % to_number<int>( a.container );
-		container = out.string();
-		return out;
+		_int = (int)_int % (int)a._int;
+
+		return _int;
 	}
 
     int operator++() {
-        int ret = atol(container.c_str()) + 1;
-        container = to_string(ret);
-        ++_pos;
-        return ret;
+        _int = _int + 1;
+    
+        return _int;
     }
         
     var operator*(var a) {
-        std::string out;
-        if( _type == "int" || _type == "double" ) {
-            out = to_string( std::stoi( a.container ) * std::stoi( container ) );
-        }
-        
-        container = out;
+		_int = _int * a._int;
 
-        return out;
+		return _int;
     }
 
 	var operator/(var a) {
-		return (var)( to_number<int>( a.container ) * to_number<int>( container ) );
+		return _int / a._int;
 	}
 		     
 	bool operator&&( var a ) {
 		
-		if(  to_number<double>( container ) && to_number<double>( a.container ) ) {
+		if(  _int && a._int ) {
 			return true;
 		}
 		return false;
@@ -460,7 +406,7 @@ public:
 
 	bool operator||( var a ) {
 		
-		if(  to_number<double>( container ) || to_number<double>( a.container ) ) {
+		if(  _int || a._int ) {
 			return true;
 		}
 		return false;
@@ -469,28 +415,28 @@ public:
 
 	bool operator<( var a ) {
 		
-		if( to_number<double>( container ) <  to_number<double>( a.container )  ) {
+		if(  _int < a._int ) {
 			return true;
 		}
 		return false;
 	}
 				     
 	bool operator>( var a ) {
-		if( to_number<double>( container ) >  to_number<double>( a.container )  ) {
+		if(  _int > a._int ) {
 			return true;
 		}
 		return false;
 	}
 		     
 	bool operator<=( var a ) {
-		if( to_number<double>( container ) <=  to_number<double>( a.container )  ) {
+		if(  _int <= a._int ) {
 			return true;
 		}
 		return false;
 	}
 
 	bool operator>=( var a ) {
-		if( to_number<double>( container ) >=  to_number<double>( a.container )  ) {
+		if(  _int >= a._int ) {
 			return true;
 		}
 		return false;
@@ -498,27 +444,31 @@ public:
 		     
 	bool operator==( var a ) {
 
-		if( a.container == container && a._type == _type  ) {
+		if(  string() == a.string() ) {
 			return true;
 		}
 		return false;
 	}	
 
 	bool operator!=( var a ) {
-		if( a.container != container ) {
+		if(  _int != a._int ) {
 			return true;
 		}
 		return false;
 	}
 
+	void array() {
+		_type = PHP_ARRAY;
+	}
+
 	var &operator[]( var a ) {
 
-		_type = "array";
+		_type = PHP_ARRAY;
 
         int i = 0;
         for(i = 0;i < keys.size(); ++i)
         {
-            if( a.container.compare( keys[i].container ) == 0) {
+        	if( a.string() == keys[i].string() ) {
                 return data[i];
             }
         }
@@ -536,27 +486,26 @@ public:
 
 
 private:
-	std::string container;
-	std::string _type;
+	std::string _string;
+	int _type;
+	double _int;
 
     std::vector<var> keys;
     std::vector<var> data;
-    int _pos; 	
-
 };
 
 
 void echo( var i ) {
-    if( i._type == "array" ) {
+    if( i.type() == PHP_ARRAY ) {
         std::cout << "Array" << std::endl;
     } else {
-        std::cout << i.container;
+        std::cout << i.string();
     }
 }
 
 
 bool empty( var a ) {
-    if( a.container == "" || a.container == "0" ) {
+    if( a.string() == "" || a.string() == "0" ) {
         return true;
     }
     
@@ -564,7 +513,7 @@ bool empty( var a ) {
 }
 
 void print_r( var a, std::string &ret_str, std::string tab = "" ) {
-    if( a.type() == "array" ) {
+    if( a.type() == PHP_ARRAY ) {
         int i = 0;
      
         ret_str += "Array (\n";
@@ -573,7 +522,7 @@ void print_r( var a, std::string &ret_str, std::string tab = "" ) {
 			
 			ret_str += tab + "    [" + x.string() + "] => ";
 		
-            if( a[x].type() == "array" ) {
+            if( a[x].type() == PHP_ARRAY ) {
                 print_r( a[x], ret_str, tab + "    " );
             } else {
                 ret_str += a[x].string() +"\n";
@@ -581,7 +530,7 @@ void print_r( var a, std::string &ret_str, std::string tab = "" ) {
         }
 
         ret_str += tab + ")\n";
-    } else if ( a.type() == "function" ) {
+    } else if ( a.type() == PHP_FUNCTION ) {
     	ret_str += "function";
     } else {
         ret_str += a.string();
