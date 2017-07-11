@@ -236,6 +236,7 @@ public:
 		return string();
 	}
 
+    
 	bool isset( var index ) {
 		for( int i = 0; i < keys.size(); i++ ) {
 
@@ -256,6 +257,7 @@ public:
 
 		return false;			
 	}
+
     
 
 	var type() {

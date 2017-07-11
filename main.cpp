@@ -480,27 +480,18 @@ private:
             } break;
 
 
-            case LEFT_BRACKET: {
+            case LEFT_BRACKET: case LEFT_BRACE: case ARRAY: {
                 val = do_array();
                 return true;
             } break;
-            
+        
+
             case LEFT_PAREN: {
                 offset++;
                 val = do_paren();
                 return true;            
             } break;
 
-            case LEFT_BRACE:{
-                val = do_array();
-                return true;            
-            } break;
-
-            case ARRAY:{
-                offset++;
-                val = do_array();
-                return true;            
-            } break;
 
             case FOREACH: {
                 offset++;
