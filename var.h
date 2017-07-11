@@ -91,13 +91,10 @@ public:
 
     std::string string() {
     	if( _type == PHP_DOUBLE ){
-    		char ret[11];
-    		dtoa_milo( _int, ret );
-    		return ret;
+    		return double_to_string(_int);
     	} else if( _type == PHP_INT ) {
-    		char ret[11];
-    		i32toa_sse2( _int, ret );
-    		return ret;    		
+
+    		return int_to_string( _int );    		
     	}
 		else
     		return _string;  
@@ -133,7 +130,7 @@ public:
 	var( const char * const &a ) : _type(PHP_STRING), _string( a ) {}
 
 
-	var( const unsigned char*a ) : _type(PHP_STRING), _string( to_string(a) ) {}
+	var( const unsigned char* const &a ) : _type(PHP_STRING), _string( to_string(a) ) {}
 
 	var( char *a ) : _type(PHP_STRING), _string( a )  {}
 
@@ -294,8 +291,6 @@ public:
     int length() {
         return string().size();
     }
-
-
 
 	double to_num() {
 		return _int;
@@ -465,7 +460,7 @@ public:
 		return a == string();
 	}
 		     
-	bool operator==( int a ) {
+	bool operator==( const int &a ) {
 		if( _type != PHP_STRING ){
 			return a == _int;
 		}

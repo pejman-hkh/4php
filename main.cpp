@@ -416,8 +416,7 @@ private:
 
             } break;
 
-            
-            case VARIABLE: {
+           case VARIABLE: {
                 var var_name = tokens[offset++][1];
 
                 val = do_variable( variables[ var_name ], var_name );
@@ -427,25 +426,6 @@ private:
                 }
 
                 return true;
-            } break;
-
-            case STRING: case NUMBER: case TRUE: case FALSE : {
-                switch( tokens[offset][0].to_int() ) {
-                    case TRUE :
-                        val = true;
-                        offset++;
-                        break;
-                    case FALSE :
-                        val = false;
-                        offset++;                   
-                        break;
-                    default:
-                        val = tokens[offset++][1]; 
-                        break;
-
-                }
-           
-                return true;            
             } break;
 
             
@@ -478,10 +458,24 @@ private:
                     return true;
                 }           
             } break;
+            
+ 
+            case STRING: case NUMBER: case TRUE: case FALSE : {
+                switch( tokens[offset][0].to_int() ) {
+                    case TRUE :
+                        val = true;
+                        offset++;
+                        break;
+                    case FALSE :
+                        val = false;
+                        offset++;                   
+                        break;
+                    default:
+                        val = tokens[offset++][1]; 
+                        break;
 
-            case SHEBANG: {
-                offset++;
-                start();
+                }
+           
                 return true;            
             } break;
 
@@ -556,8 +550,6 @@ private:
                 return true;            
             } break;
             
-
-            
             case FOR:{
                 offset++;
 
@@ -590,7 +582,11 @@ private:
                 return true;            
             } break;
 
-
+            case SHEBANG: {
+                offset++;
+                start();
+                return true;            
+            } break;
 
             case END_PHP: {
                 offset++;
@@ -601,6 +597,102 @@ private:
 
         return false;
     }
+
+    var do_first_operator() {
+        var ret;
+        if( ! get_val( ret ) ) {
+
+            return ret;
+        }
+
+        switch( tokens[offset][0].to_int() ) {
+            case EQ_OP :
+                offset++;
+                ret = ret == do_first_operator();
+            break;
+
+            case LESS_EQUAL : 
+                offset++;
+                ret = ret <= do_first_operator();
+            break;
+
+            case LESS :
+                offset++;
+                ret = ret < do_first_operator();
+            break;    
+            case GREATER :     
+                offset++;
+                ret = ret > do_first_operator();
+            break;
+
+            case GREATER_EQUAL :     
+                offset++;
+                ret = ret >= do_first_operator();
+            break;
+
+        }
+
+        return ret;
+    }
+
+    var do_second_operator() {
+
+        var ret = do_first_operator();
+
+        switch( tokens[offset][0].to_int() ) {
+            case PERCENT :
+                offset++;
+                ret %= do_second_operator();
+            break;
+
+            case STAR : 
+                offset++;
+                ret *= do_second_operator();
+            break;
+
+            case SLASH :
+                offset++;
+                ret /= do_second_operator();
+            break;    
+            case LOGICAL_AND :     
+                offset++;
+                ret = ret && do_second_operator();
+            break;
+
+        }
+
+        return ret;
+    }
+
+    var do_operator() {
+
+        var ret = do_second_operator();
+       
+        switch( tokens[offset][0].to_int() ) {
+            case DOT :
+                offset++;
+                ret = ret.concat( do_operator() );
+            break;
+
+            case PLUS : 
+                offset++;
+                ret += do_operator();
+            break;
+
+            case DASH :
+                offset++;
+                ret -= do_operator();
+            break;    
+            case LOGICAL_OR :     
+                offset++;
+                ret = ret || do_operator();
+            break;
+
+        }
+
+        return ret;
+    }
+
 
     var make_class() {
    
@@ -855,101 +947,6 @@ private:
 
         start();
         return 0;  
-    }
-
-    var do_first_operator() {
-        var ret;
-        if( ! get_val( ret ) ) {
-
-            return ret;
-        }
-
-        switch( tokens[offset][0].to_int() ) {
-            case EQ_OP :
-                offset++;
-                ret = ret == do_first_operator();
-            break;
-
-            case LESS_EQUAL : 
-                offset++;
-                ret = ret <= do_first_operator();
-            break;
-
-            case LESS :
-                offset++;
-                ret = ret < do_first_operator();
-            break;    
-            case GREATER :     
-                offset++;
-                ret = ret > do_first_operator();
-            break;
-
-            case GREATER_EQUAL :     
-                offset++;
-                ret = ret >= do_first_operator();
-            break;
-
-        }
-
-        return ret;
-    }
-
-    var do_second_operator() {
-
-        var ret = do_first_operator();
-
-        switch( (int)tokens[offset][0].to_num() ) {
-            case PERCENT :
-                offset++;
-                ret %= do_second_operator();
-            break;
-
-            case STAR : 
-                offset++;
-                ret *= do_second_operator();
-            break;
-
-            case SLASH :
-                offset++;
-                ret /= do_second_operator();
-            break;    
-            case LOGICAL_AND :     
-                offset++;
-                ret = ret && do_second_operator();
-            break;
-
-        }
-
-        return ret;
-    }
-
-    var do_operator() {
-
-        var ret = do_second_operator();
-       
-        switch( (int)tokens[offset][0].to_num() ) {
-            case DOT :
-                offset++;
-                ret = ret.concat( do_operator() );
-            break;
-
-            case PLUS : 
-                offset++;
-                ret += do_operator();
-            break;
-
-            case DASH :
-                offset++;
-                ret -= do_operator();
-            break;    
-            case LOGICAL_OR :     
-                offset++;
-                ret = ret || do_operator();
-            break;
-
-        }
-
-        return ret;
     }
 
 
@@ -1307,10 +1304,6 @@ private:
         start();
     }
 
-
-    void error( var error ) {
-        echo( error );
-    }
 
     int offset = 0;
     var &tokens;
