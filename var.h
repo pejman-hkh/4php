@@ -530,17 +530,18 @@ public:
         int i = 0;
         for(i = 0;i < keys.size(); ++i)
         {
-        	if( keys[i]._type == PHP_STRING ){
-        		if(  int_to_string( a ) == keys[i].string() )
-                	return data[i];	
+        	if( keys[i]._type != PHP_STRING ){
+        		if(  a == keys[i]._int )
+	                return data[i]; 
         	} else {
-	         	if(  a == keys[i]._int )
-	                return data[i];       		
+        		if(  int_to_string( a ) == keys[i].string() )
+                	return data[i];		         	     		
         	}
 
         }
 
         var temp;
+
 	    keys.push_back( a );
         data.push_back( temp );
 
@@ -554,12 +555,12 @@ public:
         int i = 0;
         for(i = 0;i < keys.size(); ++i)
         {
-        	if( keys[i]._type == PHP_STRING ){
-        		if(  double_to_string( a ) == keys[i].string() )
-                	return data[i];	
+        	if( keys[i]._type != PHP_STRING ){
+        		if(  a == keys[i]._int )
+	                return data[i];
         	} else {
-	         	if(  a == keys[i]._int )
-	                return data[i];       		
+        		if(  double_to_string( a ) == keys[i].string() )
+                	return data[i];		         	      		
         	}
         }
 

@@ -416,8 +416,8 @@ private:
 
             } break;
 
-           case VARIABLE: {
-                var var_name = tokens[offset++][1];
+            case VARIABLE: {
+                var &var_name = tokens[offset++][1];
 
                 val = do_variable( variables[ var_name ], var_name );
 
@@ -591,10 +591,7 @@ private:
 
     var do_first_operator() {
         var ret;
-        if( ! get_val( ret ) ) {
-
-            return ret;
-        }
+        get_val( ret );
 
         switch( tokens[offset][0].to_int() ) {
             case EQ_OP :
@@ -687,7 +684,7 @@ private:
 
     var make_class() {
    
-        var class_name = tokens[offset][1];
+        var &class_name = tokens[offset][1];
         offset++;
         offset++;
 
@@ -721,9 +718,7 @@ private:
     }
 
     var do_variable( var &vars, var &var_name ) {
-        var var_val;
-        var index;
-        bool index_t = false;
+        
         if( tokens[offset][0] == EQUAL ) {
 
             offset++;
@@ -732,7 +727,9 @@ private:
 
             return vars;
         } else {
-
+            var var_val;
+            var index;
+            bool index_t = false;
             if( tokens[offset][0] == LEFT_BRACKET ) {
 
                 offset++;
@@ -746,7 +743,7 @@ private:
             if( tokens[offset][0] == OBJECT_OPERATOR ) {
                 offset++;
 
-                var method_name = tokens[offset++][1];
+                var &method_name = tokens[offset++][1];
                 offset++;
 
                 var params;
@@ -846,30 +843,30 @@ private:
 
                 }
             }
-        }
 
+            //var empty;
+            var &out = index_t ? vars[ index ] : vars ;
 
+            if( var_name == "SUPERGLOBALS" && index_t ) {
+                super_global_variables[ index ] = var_val;
+            }
+            
+            if( tokens[offset][0] == LEFT_BRACKET ) {
 
-        //var empty;
-        var &out = index_t ? vars[ index ] : vars ;
-
-        if( var_name == "SUPERGLOBALS" && index_t ) {
-            super_global_variables[ index ] = var_val;
-        }
+                return do_variable( out, var_name );
+            } 
         
-        if( tokens[offset][0] == LEFT_BRACKET ) {
+            return out; 
 
-            return do_variable( out, var_name );
-        } 
-    
-        return out; 
+        }
+
     }
 
 
     var do_eval() {
 
         int start_offset = offset;
-        var kind = tokens[offset][1];
+        var &kind = tokens[offset][1];
 
         offset++;
         offset++;
@@ -1001,7 +998,6 @@ private:
                 offset++;
                 continue;
             }
-
         }
         
 
@@ -1011,7 +1007,7 @@ private:
             variables.unset();
 
 
-            var ff = local_functions[ func_name ];
+            var &ff = local_functions[ func_name ];
 
             int temp_offset = offset;
             offset = ff[0].to_num()+1;
@@ -1041,7 +1037,7 @@ private:
 
     void find_function() {
         //find function if call before definetion
-        std::string func_name = tokens[ offset++ ][1].string();
+        var &func_name = tokens[ offset++ ][1];
 
         while( true ) {
             if( offset == tokens.count() - 1 ) {
@@ -1204,7 +1200,7 @@ private:
     }
 
     void make_function( bool plz_start = true ) {
-        var func_name = tokens[offset++][1];
+        var &func_name = tokens[offset++][1];
         if( local_functions.isset( func_name ) ) {
             offset = local_functions[ func_name ][1].to_num();
         } else {
@@ -1256,7 +1252,7 @@ private:
         var array = do_operator();
         var key;
 
-        var value = tokens[++offset][1];
+        var &value = tokens[++offset][1];
         offset++;
         if( tokens[offset][0] == EQ_ARR ) {
             offset++;
@@ -1324,8 +1320,7 @@ var exten_sum( var &p ) {
 
 var exten_echo( var &p ) {
     echo( p[0] );
-    
-    return 0;
+
 }
 
 var exten_print_r( var &p ) {
@@ -1338,7 +1333,7 @@ var exten_print_r( var &p ) {
     else 
        print_r( p[0] );
     
-    return 0;
+ 
 }
 
 var exten_is_array( var &p ) {
@@ -1390,13 +1385,13 @@ var exten_round( var &p ) {
 
 var exten_exit( var &p )  {
     exit(0);
-    return 0;
+
 }
 
 var exten_die( var &p )  {
     echo( p[0] );
     exit(0);
-    return 0;
+
 }
 
 var exten_implode( var &p )  {
