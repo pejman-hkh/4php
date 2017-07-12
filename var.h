@@ -530,14 +530,18 @@ public:
         int i = 0;
         for(i = 0;i < keys.size(); ++i)
         {
-        	if( keys[i]._type != PHP_STRING ){
-        		if(  a == keys[i]._int )
-	                return data[i]; 
-        	} else {
-        		if(  int_to_string( a ) == keys[i].string() )
-                	return data[i];		         	     		
+
+        	switch( keys[i]._type ) {
+	            case PHP_STRING :
+	            	if(  int_to_string( a ) == keys[i].string() )
+                	return data[i];
+                break;
+                default:
+	                if(  a == keys[i]._int )
+		                return data[i];
         	}
 
+        
         }
 
         var temp;
@@ -555,12 +559,14 @@ public:
         int i = 0;
         for(i = 0;i < keys.size(); ++i)
         {
-        	if( keys[i]._type != PHP_STRING ){
-        		if(  a == keys[i]._int )
-	                return data[i];
-        	} else {
-        		if(  double_to_string( a ) == keys[i].string() )
-                	return data[i];		         	      		
+        	switch( keys[i]._type ) {
+	            case PHP_STRING :
+	            	if(  double_to_string( a ) == keys[i].string() )
+                	return data[i];
+                break;
+                default:
+	                if(  a == keys[i]._int )
+		                return data[i];
         	}
         }
 
@@ -638,7 +644,7 @@ void print_r( var a, std::string &ret_str, const std::string &tab = "" ) {
      
         ret_str += "Array (\n";
     
-        for( auto x : a ) {
+        for( auto &x : a ) {
 			
 			ret_str += tab + "    [" + x.string() + "] => ";
 		
