@@ -632,7 +632,7 @@ bool empty( var a ) {
     return false;
 }
 
-void print_r( var a, std::string &ret_str, std::string tab = "" ) {
+void print_r( var a, std::string &ret_str, const std::string &tab = "" ) {
     if( a.type() == PHP_ARRAY ) {
         int i = 0;
      
