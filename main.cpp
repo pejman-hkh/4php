@@ -441,6 +441,7 @@ private:
                     val = do_function();
                     return true;
                 } else if( local_functions.isset( tokens[offset][1] ) ) {
+
                     do_function( true );
                     val = return_val;
                     return true;
@@ -454,7 +455,7 @@ private:
                     find_function();
                     offset = temp_offset;
 
-                    if( local_functions.isset( tokens[offset][1] ) && tokens[offset+1] == LEFT_PAREN ) {
+                    if( local_functions.isset( tokens[offset][1] ) && tokens[offset+1][0] == LEFT_PAREN ) {
                         do_function( true );
                         val = return_val;                     
                     } else {
@@ -1050,6 +1051,7 @@ private:
             if( tokens[offset++][0] == FUNCTION ) {
 
                 if( tokens[offset][1] == func_name ) {
+
                     make_function( false );
                     break;
                 }
@@ -1241,7 +1243,8 @@ private:
             ff[1] = end;
             ff[2] = params;
             ff[3] = params_val;
-            local_functions[ func_name ] = ff;           
+            local_functions[ func_name ] = ff;
+
         }
 
         if( plz_start )
