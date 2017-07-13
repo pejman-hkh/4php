@@ -86,7 +86,7 @@ public:
     func1 function1;
     std::function <var(var&)> methods;
     std::function <var(var)> methods1;
-	friend void echo( var a );
+
 	friend bool empty( var a );
 
     std::string string() {
@@ -245,7 +245,8 @@ public:
         			if( index._string == keys[i]._string )
         				return true;
         		} else {
-        			return index._int == keys[i]._int;
+        			if( index._int == keys[i]._int )
+        				return true;
         		}
         	}
         	else {
@@ -483,7 +484,7 @@ public:
 	}	
 
 	bool operator!=( var a ) {
-		return _int != a._int;
+		return _int != a._int ? false : true ;
 	}
 
 	var &operator[]( const std::string &a ) {
@@ -622,10 +623,10 @@ private:
 
 
 void echo( var i ) {
-    if( i._type == PHP_ARRAY ) {
-        std::cout << "Array" << std::endl;
+    if( i.type() == PHP_ARRAY ) {
+    	std::cout << "Array" << std::endl;
     } else {
-        std::cout << i.string();
+    	printf("%s", i.string().c_str() );     
     }
 }
 

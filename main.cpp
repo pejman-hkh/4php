@@ -404,9 +404,7 @@ private:
                 offset++;
                 if( tokens[offset][0] == IDENTIFIER && (tokens[offset][1] == "php" || tokens[offset][1] == "4php" ) ) {
                     offset++;
-                }
-
-                if( tokens[offset][0] == EQUAL ) {
+                } else if( tokens[offset][0] == EQUAL ) {
                     offset++;
                     val = do_operator();
                     echo( val );
@@ -414,7 +412,16 @@ private:
 
                 start();  
 
+                return true;
             } break;
+
+
+            case END_PHP: {
+                offset++;
+                start();
+                return true;              
+            } break;
+
 
             case VARIABLE: {
                 var &var_name = tokens[offset++][1];
@@ -570,7 +577,7 @@ private:
                 offset++;
                 val = make_class();
 
-                return true;            
+               return true;            
             } break;
 
             case SHEBANG: {
@@ -579,19 +586,15 @@ private:
                 return true;            
             } break;
 
-            case END_PHP: {
-                offset++;
-                start();                
-            } break;
-
         }
 
-        return false;
+       return false;
     }
 
     var do_first_operator() {
         var ret;
-        get_val( ret );
+        if( ! get_val( ret ) )
+            return ret;
 
         switch( tokens[offset][0].to_int() ) {
             case EQ_OP :
@@ -655,7 +658,7 @@ private:
     var do_operator() {
 
         var ret = do_second_operator();
-       
+        
         switch( tokens[offset][0].to_int() ) {
             case DOT :
                 offset++;
@@ -903,20 +906,17 @@ private:
                 }
             }
 
-           
-            
             var new_tokens;
             int i = 0;
             int index = 0;
-            for( auto x : tokens ) {
+            for( auto &x : tokens ) {
                 if( ! tokens.isset( i ) ) break;
 
-                
                 new_tokens[ index++ ] = tokens[i++];
            
 
                 if( i == start_offset ) {
-                    for( auto x1 : new_toks ) {
+                    for( auto &x1 : new_toks ) {
                         new_tokens[ index++ ] = new_toks[x1];
                     }
 
@@ -930,6 +930,9 @@ private:
             tokens = new_tokens;
             new_tokens.unset();
         }
+
+
+
 
         offset = start_offset;
 
@@ -1095,6 +1098,7 @@ private:
             start();
         }
     }
+
 
 
     void do_for() {
