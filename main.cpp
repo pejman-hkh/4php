@@ -949,39 +949,29 @@ private:
         int index = 0;
         var array;
         while( true ) {
-
-            switch( tokens[offset][0].to_int() ){
-                case RIGHT_BRACKET:
-                case RIGHT_PAREN :
-                case RIGHT_BRACE:
-                    offset++;
-                    goto exit_loop;
-                break;    
+            if( tokens[offset][0] == RIGHT_BRACKET || tokens[offset][0] == RIGHT_PAREN || tokens[offset][0] == RIGHT_BRACE  ) {
+                offset++;
+                break;
             }
 
             var gindex = do_operator();
 
-            switch( tokens[offset][0].to_int() ) {
-                case EQ_ARR:
-                case COLON:
-                    offset++;
-                    array[gindex] = do_operator();
-                break;
-                case COMMA :
-                    offset++;
-                    continue;
-                break;                    
-                default:
-                    array[index++] = gindex;   
+            if( tokens[offset][0] == EQ_ARR || tokens[offset][0] == COLON ) {
+                offset++;
+                array[gindex] = do_operator();
+            } else {
+                array[index++] = gindex;
             }
 
-
+            if( tokens[offset][0] == COMMA ) {
+                offset++;
+                continue;
+            }
         }
-
-        exit_loop:
 
         return array;
     }
+
 
     var do_function( bool local = false ) {
         var &func_name = tokens[ offset++ ][1];
