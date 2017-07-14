@@ -949,13 +949,17 @@ private:
         int index = 0;
         var array;
         while( true ) {
-            if( tokens[offset][0] == RIGHT_BRACKET || tokens[offset][0] == RIGHT_PAREN || tokens[offset][0] == RIGHT_BRACE  ) {
-                offset++;
-                break;
+            switch( tokens[offset][0].to_int() ){
+                case RIGHT_BRACKET:
+                case RIGHT_PAREN :
+                case RIGHT_BRACE :
+                    offset++;
+                    goto exit_loop;
+                break;    
             }
-
+          
             var gindex = do_operator();
-
+            
             if( tokens[offset][0] == EQ_ARR || tokens[offset][0] == COLON ) {
                 offset++;
                 array[gindex] = do_operator();
@@ -968,7 +972,7 @@ private:
                 continue;
             }
         }
-
+        exit_loop:
         return array;
     }
 
@@ -1258,7 +1262,8 @@ private:
         }
         offset++;
 
-        if( array.type() != PHP_ARRAY ) {
+        if( array.count() == 0 ) {
+
             offset++;
             find_end_block();
 
