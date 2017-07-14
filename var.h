@@ -630,7 +630,8 @@ void echo( var i ) {
     if( i.type() == PHP_ARRAY ) {
     	printf("Array\n"); 
     } else {
-    	fwrite(i.string().c_str(), 1, i.string().length() - 1, stdout);
+    	fwrite(i.string().c_str(), 1, i.string().length(), stdout);
+    	//fflush (stdout);
     	//printf("%s", i.string().c_str() );
     }
 }
@@ -672,7 +673,8 @@ void print_r( var a, std::string &ret_str, const std::string &tab = "" ) {
 void print_r( const var &a ) {
 	std::string out;
 	print_r( a, out );
-	fwrite(out.c_str(), 1, out.length() - 1, stdout);
+	fwrite(out.c_str(), 1, out.length(), stdout);
+	//fflush (stdout);
 	//std::cout << out;
 }
 
