@@ -89,6 +89,10 @@ public:
 
 	friend bool empty( var a );
 
+	const char * c_str() {
+		return _string.c_str();
+	}
+
     std::string string() {
     	if( _type == PHP_DOUBLE ){
     		return double_to_string(_int);
@@ -624,9 +628,10 @@ private:
 
 void echo( var i ) {
     if( i.type() == PHP_ARRAY ) {
-    	std::cout << "Array" << std::endl;
+    	printf("Array\n"); 
     } else {
-    	printf("%s", i.string().c_str() );     
+    	fwrite(i.string().c_str(), 1, i.string().length() - 1, stdout);
+    	//printf("%s", i.string().c_str() );
     }
 }
 
@@ -664,11 +669,11 @@ void print_r( var a, std::string &ret_str, const std::string &tab = "" ) {
     }
 }
 
-
 void print_r( const var &a ) {
 	std::string out;
 	print_r( a, out );
-	std::cout << out;
+	fwrite(out.c_str(), 1, out.length() - 1, stdout);
+	//std::cout << out;
 }
 
 static var classes;
