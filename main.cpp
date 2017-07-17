@@ -51,7 +51,7 @@ bool load_extension( const std::string &extension ) {
     func1 load_functions = (func1)dlsym(myso, "load_functions" );
     if ((error = dlerror()) == NULL)  {
         var funcs = load_functions(0);
-        for( auto d : funcs ) {
+        for( auto &d : funcs ) {
             functions[d] = funcs[d];
         } 
     } else {
@@ -363,6 +363,7 @@ var tokenize( std::string &source, bool eval = false )
 
 static var tokens;
 
+
 class interpreter {
 public:
 
@@ -428,7 +429,7 @@ private:
 
                 val = do_variable( variables[ var_name ], var_name );
 
-                for( auto x : super_global_variables ) {
+                for( auto &x : super_global_variables ) {
                     variables[x] = super_global_variables[x];
                 }
 
@@ -545,7 +546,9 @@ private:
             
             case WHILE:{
                 offset++;
-                do_while();
+                int end_offset = 0;
+                offset++;
+                do_while( end_offset );
                 return true;            
             } break;
             
@@ -722,14 +725,16 @@ private:
     }
 
     var do_variable( var &vars, var &var_name ) {
-        
-        if( tokens[offset][0] == EQUAL ) {
+        if( tokens[offset][0] == RIGHT_PAREN || tokens[offset][0] == COMMA ) {
+            return vars;
+        } else if( tokens[offset][0] == EQUAL ) {
 
             offset++;
 
             vars = do_operator();
 
             return vars;
+
         } else {
             var var_val;
             var index;
@@ -1012,12 +1017,12 @@ private:
             var &params = ff[2];
             var &params_val = ff[3];
 
-            for( auto x : params ) {
+            for( auto &x : params ) {
                 variables[ params[x] ] = out.isset( x ) ? out[x] : ( params_val.isset( x ) ? params_val[x] : "" );
             }
 
             //define super global variable in functions
-            for( auto s : super_global_variables ) {
+            for( auto &s : super_global_variables ) {
                 variables[ s ] = super_global_variables[s];
             }
 
@@ -1062,35 +1067,33 @@ private:
     }
 
 
-    void do_while() {
+    void do_while( int &end_offset ) {
         int start_offset = offset;
-
-        offset++;
 
         var statement = do_operator();
 
-        offset++;
+        offset += 2;
 
-        offset++;
         int st_while_offset = offset;
         if( statement ) {
 
             start();
 
             if( tokens[offset-2][0] == BREAK ) {
-  
+           
                 offset = st_while_offset;
-                find_end_block();
+                find_end_block();                   
+           
                 start();
             } else  {
-
+                end_offset = offset;
                 offset = start_offset;
-                do_while();            
+                do_while( end_offset );         
             }
 
         } else {
-            
-            find_end_block();
+
+            offset = end_offset+1;
             start();
         }
     }
@@ -1270,7 +1273,7 @@ private:
         } else {
             int temp_offset = ++offset;
 
-            for( auto x : array ) {
+            for( auto &x : array ) {
                 variables[ key ] = x;
                 variables[ value ] = array[x];
                 offset = temp_offset;
@@ -1313,7 +1316,7 @@ var exten_define( var &p )  {
 
 var exten_sum( var &p ) {
     var out = 0;
-    for( auto x : p ) {
+    for( auto &x : p ) {
         out += p[x];
     }
     return out;
@@ -1399,7 +1402,7 @@ var exten_die( var &p )  {
 var exten_implode( var &p )  {
     var out = "";
     var pre = "";
-    for( auto x : p[1] ) {
+    for( auto &x : p[1] ) {
         out += pre+p[1][x];
         pre = p[0];
     }
@@ -1411,7 +1414,7 @@ var exten_implode( var &p )  {
 var exten_get_defined_functions( var &p )  {
     var internal;
     int i = 0;
-    for( auto x : functions ) {
+    for( auto &x : functions ) {
         internal[ i++ ] = x;
 
     }
