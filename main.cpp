@@ -289,7 +289,6 @@ var tokenize( std::string &source, bool eval = false )
                     bool is_int = true;
                     while(std::isdigit(source[i])) passes += source[i++];
                     if(source[i]=='.') {
-                        std::cout << "here";
                         is_int = false;
                         passes += ".";
                         ++i;
