@@ -8,6 +8,9 @@ Simple php interpreter Inspire from Binaryphp
 5. Not support php casting
 6. Not support do while
 
+# JIT
+Will added soon ...
+
 # About
 This simple php interpreter written in c++11 and can be used as template engine in c++ too.
 
