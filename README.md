@@ -116,7 +116,7 @@ echo("Content-type: text/html\r\n\r\n");
 
 $request = request();
 
-//define super global function in 4php
+//define superglobal variable in 4php
 $SUPERGLOBALS['_GET'] = $request['get'];
 $SUPERGLOBALS['_POST'] = $request['post'];
 $SUPERGLOBALS['_SERVER'] = $request['server'];
