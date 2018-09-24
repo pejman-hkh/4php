@@ -1481,8 +1481,6 @@ int main( int argc, char** argv ) {
     functions["explode"] = exten_explode;
     functions["get_defined_functions"] = exten_get_defined_functions;
 
-    //load_extension("standard");
-    
 
     tokens = tokenize( source );
 
